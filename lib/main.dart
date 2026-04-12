@@ -5,6 +5,7 @@ import 'screens/onboarding_screen.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
+import 'screens/upload_report.dart';
 
 void main() {
   runApp(const MyApp());
@@ -33,6 +34,7 @@ class MyApp extends StatelessWidget {
         '/dashboard': (context) => const Scaffold(),
         '/emergency': (context) => EmergencySosScreen(),
         '/reminder': (context) => const ReminderScreen(),
+        '/upload': (context) => const UploadReportScreen(),
       },
     );
   }
