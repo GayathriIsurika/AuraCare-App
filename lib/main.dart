@@ -1,3 +1,5 @@
+import 'package:auracare_app/screens/emergency_sos_screen.dart';
+import 'package:auracare_app/screens/reminder_screen.dart';
 import 'package:flutter/material.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/welcome_screen.dart';
@@ -17,9 +19,7 @@ class MyApp extends StatelessWidget {
       title: 'Health App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF4A90D9),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4A90D9)),
         useMaterial3: true,
       ),
 
@@ -31,6 +31,8 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignupScreen(),
         '/dashboard': (context) => const Scaffold(),
+        '/emergency': (context) => EmergencySosScreen(),
+        '/reminder': (context) => const ReminderScreen(),
       },
     );
   }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/onboarding_data.dart';
 import '../widgets/onboarding_page.dart';
-import 'package:auracare_app/constant/app_colors.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -19,19 +18,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     OnboardingData(
       title: 'Your Health, Organized for Life',
       description:
-      'Store all your medical reports, prescriptions, and test results in one secure place accessible anytime',
+          'Store all your medical reports, prescriptions, and test results in one secure place accessible anytime',
       imagePath: 'assets/images/onboard1.png',
     ),
     OnboardingData(
       title: 'Your Smart Health Companion',
       description:
-      'Get AI-powered guidance, simple report summaries, and instant answers to everyday health questions',
+          'Get AI-powered guidance, simple report summaries, and instant answers to everyday health questions',
       imagePath: 'assets/images/onboard2.png',
     ),
     OnboardingData(
       title: 'Never Miss Medicines or Appointments',
       description:
-      'Set automatic reminders for medications, doctor visits, and important health tasks stay on track effortlessly',
+          'Set automatic reminders for medications, doctor visits, and important health tasks stay on track effortlessly',
       imagePath: 'assets/images/onboard3.png',
     ),
   ];
@@ -67,10 +66,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFEAF0FF),
-              Color(0xFFF0FAFF),
-            ],
+            colors: [Color(0xFFEAF0FF), Color(0xFFF0FAFF)],
           ),
         ),
         child: SafeArea(
@@ -78,8 +74,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             children: [
               // ── Top Bar ──
               Padding(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -117,7 +115,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
                   _pages.length,
-                      (index) => AnimatedContainer(
+                  (index) => AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     width: _currentPage == index ? 20 : 8,
