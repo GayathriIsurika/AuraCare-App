@@ -2,7 +2,7 @@ class AppointmentModel {
   final String doctorName;
   final String location;
   final String time;
-  final bool isCheckedIn;
+  bool isCheckedIn;
   AppointmentModel({
     required this.doctorName,
     required this.location,

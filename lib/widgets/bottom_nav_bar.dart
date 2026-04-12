@@ -44,7 +44,7 @@ class BottomNavBar extends StatelessWidget {
           label: "M vault",
         ),
         BottomNavigationBarItem(
-          icon: FaIcon(FontAwesomeIcons.bell),
+          icon: FaIcon(FontAwesomeIcons.solidBell),
           label: "Reminder",
         ),
         BottomNavigationBarItem(
