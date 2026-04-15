@@ -121,30 +121,41 @@ class _UploadFabMenuState extends State<UploadFabMenu>
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // ── Menu Items ──────────────────────────────────────────────
-        if (_isOpen) ...[
-          _buildMenuItem(
-            label: 'Scan Document',
-            icon: Icons.document_scanner_outlined,
-            color: const Color(0xFF4A90D9),
-            onTap: _scanDocument,
-          ),
-          const SizedBox(height: 12),
-          _buildMenuItem(
-            label: 'Upload from Gallery',
-            icon: Icons.photo_outlined,
-            color: const Color(0xFF27AE60),
-            onTap: _pickFromGallery,
-          ),
-          const SizedBox(height: 12),
-          _buildMenuItem(
-            label: 'Browse Files / PDF',
-            icon: Icons.folder_outlined,
-            color: const Color(0xFF9B59B6),
-            onTap: _pickFile,
-          ),
-          const SizedBox(height: 16),
-        ],
+        // ── FIX 3: Use AnimatedSize + always-present FadeTransition
+        //    so the reverse animation actually plays before items vanish
+        AnimatedSize(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+          child: _isOpen
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _buildMenuItem(
+                      label: 'Scan Document',
+                      icon: Icons.document_scanner_outlined,
+                      color: const Color(0xFF4A90D9),
+                      onTap: _scanDocument,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildMenuItem(
+                      label: 'Upload from Gallery',
+                      icon: Icons.photo_outlined,
+                      color: const Color(0xFF27AE60),
+                      onTap: _pickFromGallery,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildMenuItem(
+                      label: 'Browse Files / PDF',
+                      icon: Icons.folder_outlined,
+                      color: const Color(0xFF9B59B6),
+                      onTap: _pickFile,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                )
+              : const SizedBox.shrink(),
+        ),
 
         // ── Main FAB Button ─────────────────────────────────────────
         FloatingActionButton(
@@ -170,53 +181,60 @@ class _UploadFabMenuState extends State<UploadFabMenu>
       opacity: _expandAnimation,
       child: ScaleTransition(
         scale: _expandAnimation,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+        child: // ── FIX 2: Wrap the entire Row in GestureDetector so
+            // tapping the label chip also fires the action
+            GestureDetector(
+              onTap: onTap,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          // ── FIX 1: withOpacity → withValues (non-deprecated API)
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          // ── FIX 1 (same): withValues instead of withOpacity
+                          color: color.withValues(alpha: 0.35),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Icon(icon, color: Colors.white, size: 22),
                   ),
                 ],
               ),
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
-              ),
             ),
-            const SizedBox(width: 12),
-            GestureDetector(
-              onTap: onTap,
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withOpacity(0.35),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Icon(icon, color: Colors.white, size: 22),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -27,3 +27,11 @@ doc/api/
 
 .flutter-plugins
 .flutter-plugins-dependencies
+
+# Auto-generated plugin files
+**/generated_plugin_registrant.dart
+**/generated_plugin_registrant.cpp
+**/generated_plugin_registrant.h
+**/generated_plugins_cmake.txt
+**/GeneratedPluginRegistrant.swift
+**/GeneratedPluginRegistrant.m
