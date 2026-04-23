@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'edit_profile_screen.dart';
 import 'package:auracare_app/constant/app_colors.dart';
+import 'medical_details_screen.dart';
+import 'package:auracare_app/screens/emergency_sos_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -95,7 +97,7 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         SizedBox(height: 4),
                         Text(
-                          'pramodlakshan125@gmail.com',
+                          'smithdisanayaka125@gmail.com',
                           style: TextStyle(
                             color: Colors.white70,
                             fontSize: 12,
@@ -144,105 +146,86 @@ class ProfileScreen extends StatelessWidget {
                   _buildDetailRow(Icons.location_on_outlined, 'Tissamaharama'),
                   _buildDetailRow(Icons.cake_outlined, '04/02/2002'),
                   _buildDetailRow(Icons.person_outline, 'Male'),
-                  _buildDetailRow(Icons.water_drop_outlined, 'O+'),
 
                   const SizedBox(height: 8),
 
-                  // Edit button + See more
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          // "See more details" - expand or navigate
-                        },
-                        child: const Text(
-                          'See more details',
-                          style: TextStyle(
-                            color: buttonStart,
-                            fontSize: 13,
+                  // Edit button
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EditProfileScreen(),
                           ),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: buttonStart),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
                         ),
                       ),
-                      // Edit button opens Edit Profile
-                      OutlinedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const EditProfileScreen(),
-                            ),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFF5BB8D4)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 6,
-                          ),
-                        ),
-                        child: const Text(
-                          'Edit',
-                          style: TextStyle(color: Color(0xFF5BB8D4)),
-                        ),
+                      child: const Text(
+                        'Edit',
+                        style: TextStyle(color: buttonStart),
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
             ),
 
+
             const SizedBox(height: 24),
 
             // ── Action Buttons List ──
-            // Medical ID button
+            // Medical Details button
             _buildActionButton(
-              icon: Icons.badge_outlined,
-              label: 'Medical ID',
+              icon:  Icons.medical_information_outlined,
+              label: 'Medical Details',
+              buttonColor: buttonStart,
               textColor: Colors.black,
-              onTap: () {
-                // TODO: Navigate to Medical ID screen
+              onTap: () { Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MedicalDetailsScreen(),
+                ),
+              );
               },
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 32),
 
-            // Share Medical ID button
-            _buildActionButton(
-              icon: Icons.share_outlined,
-              label: 'Share Medical ID',
-              textColor: Colors.black,
-              onTap: () {
-                // TODO: Navigate to Share Medical ID screen
-              },
-            ),
-
-            const SizedBox(height: 12),
 
             // Manage Emergency Contacts (red color)
             _buildActionButton(
               icon: Icons.phone_outlined,
               label: 'Manage Emergency Contacts',
+              buttonColor: Colors.red.shade50,
               textColor: Colors.red,
               iconColor: Colors.red,
               borderColor: Colors.red.shade200,
               onTap: () {
-                // TODO: Navigate to Emergency Contacts screen
+                Navigator.pushNamed(context, '/emergency');
               },
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 32),
 
             // Reminder Setting button
             _buildActionButton(
               icon: Icons.notifications_outlined,
               label: 'Reminder Setting',
+              buttonColor: buttonStart,
               textColor: Colors.black,
               onTap: () {
-                // TODO: Navigate to Reminder Settings screen
+                Navigator.pushNamed(context, '/reminder');
               },
             ),
 
@@ -255,22 +238,22 @@ class ProfileScreen extends StatelessWidget {
                   // Log out → go back to welcome screen
                   Navigator.pushNamedAndRemoveUntil(
                     context,
-                    '/home',
+                    '/login',
                         (route) => false, // removes all previous screens
                   );
                 },
-                icon: const Icon(Icons.logout, color: Colors.black54),
+                icon: const Icon(Icons.logout, color: Colors.black54,size: 25,),
                 label: const Text(
                   'Log out',
                   style: TextStyle(
                     color: Colors.black54,
-                    fontSize: 15,
+                    fontSize: 20,
                   ),
                 ),
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 22),
           ],
         ),
       ),
@@ -302,6 +285,7 @@ class ProfileScreen extends StatelessWidget {
     Color textColor = Colors.black,
     Color iconColor = Colors.black54,
     Color borderColor = const Color(0xFFDDDDDD),
+    Color buttonColor = Colors.white,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -309,7 +293,7 @@ class ProfileScreen extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: buttonColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: borderColor),
         ),

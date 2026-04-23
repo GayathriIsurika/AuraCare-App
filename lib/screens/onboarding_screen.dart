@@ -43,12 +43,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
     } else {
       // Navigate to your Home/Login screen on last page
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacementNamed(context, '/welcome');
     }
   }
 
   void _onSkipPressed() {
-    Navigator.pushReplacementNamed(context, '/home');
+    Navigator.pushReplacementNamed(context, '/welcome');
   }
 
   @override

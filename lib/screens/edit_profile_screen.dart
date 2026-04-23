@@ -14,10 +14,10 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
 
   // ── Controllers hold the text the user types ──
-  final _firstNameController = TextEditingController(text: 'Kamal');
+  final _firstNameController = TextEditingController(text: 'Smith');
   final _lastNameController = TextEditingController(text: 'Disanayaka');
   final _usernameController = TextEditingController(text: 'smith125');
-  final _emailController = TextEditingController(text: 'pramodlakshan125@gmail.com');
+  final _emailController = TextEditingController(text: 'smithdisanayaka125@gmail.com');
   final _phoneController = TextEditingController(text: '717193125');
   String _selectedCountryCode = '+94';
   File? _profileImage; // store the profile image
