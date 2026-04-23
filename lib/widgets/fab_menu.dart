@@ -55,7 +55,7 @@ class _UploadFabMenuState extends State<UploadFabMenu>
     });
   }
 
-  // ── 1. Scan Document ──────────────────────────────────────────────
+  //Scan Document
   Future<void> _scanDocument() async {
     _close();
     try {
@@ -65,7 +65,6 @@ class _UploadFabMenuState extends State<UploadFabMenu>
 
       if (scannedImages != null && scannedImages.isNotEmpty) {
         _showSnack('✅ Scanned ${scannedImages.length} page(s) successfully!');
-        // TODO: Save scannedImages paths to your records
       } else {
         _showSnack('No pages scanned.');
       }
@@ -74,7 +73,7 @@ class _UploadFabMenuState extends State<UploadFabMenu>
     }
   }
 
-  // ── 2. Upload from Gallery ────────────────────────────────────────
+  //Upload from Gallery
   Future<void> _pickFromGallery() async {
     _close();
     try {
@@ -85,7 +84,6 @@ class _UploadFabMenuState extends State<UploadFabMenu>
 
       if (image != null) {
         _showSnack('✅ Image selected: ${image.name}');
-        // TODO: Save image.path to your records
       } else {
         _showSnack('No image selected.');
       }
@@ -94,7 +92,7 @@ class _UploadFabMenuState extends State<UploadFabMenu>
     }
   }
 
-  // ── 3. Browse Files / PDF ─────────────────────────────────────────
+  //Browse Files / PDF
   Future<void> _pickFile() async {
     _close();
     try {
@@ -106,7 +104,6 @@ class _UploadFabMenuState extends State<UploadFabMenu>
       if (result != null) {
         final fileName = result.files.single.name;
         _showSnack('✅ File selected: $fileName');
-        // TODO: Save result.files.single.path to your records
       } else {
         _showSnack('No file selected.');
       }
@@ -121,8 +118,6 @@ class _UploadFabMenuState extends State<UploadFabMenu>
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // ── FIX 3: Use AnimatedSize + always-present FadeTransition
-        //    so the reverse animation actually plays before items vanish
         AnimatedSize(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOut,
@@ -157,7 +152,7 @@ class _UploadFabMenuState extends State<UploadFabMenu>
               : const SizedBox.shrink(),
         ),
 
-        // ── Main FAB Button ─────────────────────────────────────────
+        //Main FAB Button
         FloatingActionButton(
           onPressed: _toggle,
           backgroundColor: const Color(0xFF4A90D9),
@@ -181,60 +176,56 @@ class _UploadFabMenuState extends State<UploadFabMenu>
       opacity: _expandAnimation,
       child: ScaleTransition(
         scale: _expandAnimation,
-        child: // ── FIX 2: Wrap the entire Row in GestureDetector so
-            // tapping the label chip also fires the action
-            GestureDetector(
-              onTap: onTap,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          // ── FIX 1: withOpacity → withValues (non-deprecated API)
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      label,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black87,
-                      ),
-                    ),
+                  ],
+                ),
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
                   ),
-                  const SizedBox(width: 12),
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          // ── FIX 1 (same): withValues instead of withOpacity
-                          color: color.withValues(alpha: 0.35),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Icon(icon, color: Colors.white, size: 22),
-                  ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Icon(icon, color: Colors.white, size: 22),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

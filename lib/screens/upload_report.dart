@@ -3,7 +3,6 @@ import '../widgets/fab_menu.dart';
 import '../widgets/filter_sheet.dart';
 import '../widgets/bottom_nav_bar.dart';
 
-// ─── Data Model ────────────────────────────────────────────────────────────────
 class MedicalRecord {
   final String title;
   final String subtitle;
@@ -24,9 +23,8 @@ class MedicalRecord {
   });
 }
 
-// ─── All Records Data ──────────────────────────────────────────────────────────
 const List<MedicalRecord> allRecords = [
-  // ── THIS MONTH (October) ──────────────────────────────────────────
+  //October)
   MedicalRecord(
     title: 'Complete Blood Count',
     subtitle: 'City General Hospital • Dr. Smith',
@@ -55,7 +53,7 @@ const List<MedicalRecord> allRecords = [
     category: 'consultation',
   ),
 
-  // ── NOVEMBER 2023 ─────────────────────────────────────────────────
+  // NOVEMBER
   MedicalRecord(
     title: 'Dermatology Follow-up Note',
     subtitle: 'Skin Care Center • Dr. Lee',
@@ -84,7 +82,7 @@ const List<MedicalRecord> allRecords = [
     category: 'vaccine',
   ),
 
-  // ── SEPTEMBER 2023 ────────────────────────────────────────────────
+  // SEPTEMBER
   MedicalRecord(
     title: 'Annual Checkup Report',
     subtitle: 'City General Hospital',
@@ -95,7 +93,7 @@ const List<MedicalRecord> allRecords = [
     category: 'lab',
   ),
 
-  // ── AUGUST 2023 ───────────────────────────────────────────────────
+  // AUGUST
   MedicalRecord(
     title: 'Tetanus Booster',
     subtitle: 'Valley Clinic • Dr. Adams',
@@ -117,11 +115,10 @@ const List<MedicalRecord> allRecords = [
   ),
 ];
 
-// ─── Helper: Group records by month label ─────────────────────────────────────
+//Group records by month label
 Map<String, List<MedicalRecord>> groupByMonth(List<MedicalRecord> records) {
   final Map<String, List<MedicalRecord>> grouped = {};
   for (final record in records) {
-    // Use first 3 chars of date as month key e.g. "Nov", "Oct"
     final month = _fullMonthLabel(record.date);
     grouped.putIfAbsent(month, () => []).add(record);
   }
@@ -147,7 +144,7 @@ String _fullMonthLabel(String date) {
   return map[prefix] ?? prefix;
 }
 
-// ─── Main Screen ───────────────────────────────────────────────────────────────
+// Main Screen
 class UploadReportScreen extends StatefulWidget {
   const UploadReportScreen({super.key});
 
@@ -172,13 +169,13 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   List<MedicalRecord> get _filteredRecords {
     List<MedicalRecord> records = List.from(allRecords);
 
-    // 1. Filter by tab category
+    //Filter by tab category
     final filter = _tabs[_selectedTab]['filter'];
     if (filter != null) {
       records = records.where((r) => r.category == filter).toList();
     }
 
-    // 2. Filter by selected doctors
+    //Filter by selected doctors
     if (_activeFilters.selectedDoctors.isNotEmpty) {
       records = records.where((r) {
         return _activeFilters.selectedDoctors.any(
@@ -187,7 +184,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       }).toList();
     }
 
-    // 3. Filter by selected facilities
+    //Filter by selected facilities
     if (_activeFilters.selectedFacilities.isNotEmpty) {
       records = records.where((r) {
         return _activeFilters.selectedFacilities.any(
@@ -196,10 +193,10 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       }).toList();
     }
 
-    // 4. Filter by date range
+    //Filter by date range
     records = _applyDateFilter(records);
 
-    // 5. Sort
+    //Sort
     records = _applySorting(records);
 
     return records;
@@ -212,7 +209,6 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     if (range == 'All Time') return records;
 
     return records.where((r) {
-      // Parse date like "Nov 12", "Oct 24"
       final parts = r.date.split(' ');
       if (parts.length < 2) return true;
 
@@ -286,10 +282,10 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   void _openFilterSheet() async {
     final result = await showModalBottomSheet<FilterOptions>(
       context: context,
-      isScrollControlled: true, // allows full height
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.75, // opens at 75% screen height
+        initialChildSize: 0.75,
         maxChildSize: 0.95,
         minChildSize: 0.4,
         builder: (_, scrollController) =>
@@ -309,7 +305,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4F8),
 
-      // ── App Bar ────────────────────────────────────────────────────
+      //App Bar
       appBar: AppBar(
         backgroundColor: const Color(0xFFF0F4F8),
         elevation: 0,
@@ -325,7 +321,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         centerTitle: true,
       ),
 
-      // ── Body ───────────────────────────────────────────────────────
+      //Body
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
@@ -364,14 +360,10 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
 
       floatingActionButton: const UploadFabMenu(),
 
-      // ── Bottom Nav ─────────────────────────────────────────────────
-      bottomNavigationBar: const BottomNavBar(currentIndex: null),
+      //Bottom Nav
+      bottomNavigationBar: const BottomNavBar(currentIndex: 1),
     );
   }
-
-  // ──────────────────────────────────────────────────────────────────
-  // Widget Builders
-  // ──────────────────────────────────────────────────────────────────
 
   Widget _buildSearchBar() {
     return Container(
@@ -385,7 +377,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
           prefixIcon: const Icon(Icons.search, color: Colors.grey),
           suffixIcon: GestureDetector(
-            onTap: _openFilterSheet, // ← opens the filter sheet
+            onTap: _openFilterSheet,
             child: Stack(
               alignment: Alignment.center,
               children: [
@@ -393,8 +385,8 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
                   margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: _activeFilters.isActive
-                        ? const Color(0xFF4A90D9) // blue when active
-                        : const Color(0xFFDDEEFB), // light when inactive
+                        ? const Color(0xFF4A90D9)
+                        : const Color(0xFFDDEEFB),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -679,33 +671,6 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildBottomNav() {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: Colors.white,
-      selectedItemColor: const Color(0xFF4A90D9),
-      unselectedItemColor: Colors.grey,
-      showSelectedLabels: true,
-      showUnselectedLabels: true,
-      currentIndex: 0,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.shield_outlined),
-          label: 'M vault',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.notifications_outlined),
-          label: 'Reminder',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          label: 'Profile',
-        ),
-      ],
     );
   }
 }
