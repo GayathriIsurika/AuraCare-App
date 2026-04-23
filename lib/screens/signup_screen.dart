@@ -182,7 +182,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             // TODO: Add signup logic here
                             Navigator.pushReplacementNamed(
                               context,
-                              '/dashboard',
+                              '/home',
                             );
                           },
                           style: ElevatedButton.styleFrom(

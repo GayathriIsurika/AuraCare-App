@@ -6,8 +6,9 @@ const Color cardColor = Color(0xFFFFFFFF); // white
 const Color textDark = Colors.black; // dark text
 const Color textGrey = Colors.grey; // grey text
 const Color textLight = Colors.white; // white text
-const Color textBlue = Color(0xFF5DADE2); // blue text
+const Color textBlue = Color(0xFF1A4298);
 
 const Color buttonStart = Color(0xFF72C6D5); // button start color
 const Color buttonEnd = Color(0xFF5DADE2); // button end color
 const Color buttonText = Color(0xFFFFFFFF); // white text for buttons
+const Color buttonColor = Color(0xFF5BB8D4);

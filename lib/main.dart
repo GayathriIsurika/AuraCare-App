@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignupScreen(),
         '/dashboard': (context) => const Scaffold(),
-        '/emergency': (context) => EmergencySosScreen(),
+        '/emergency': (context) =>  EmergencySosScreen(),
         '/reminder': (context) => const ReminderScreen(),
         '/upload': (context) => const UploadReportScreen(),
         '/nearby': (context) =>
