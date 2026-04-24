@@ -24,14 +24,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final ImagePicker _picker=ImagePicker();
   // ── Dropdown selected values ──
   String? _selectedGender;
-  String? _selectedBloodGroup;
   DateTime? _selectedDate;
 
   // ── Dropdown options ──
   final List<String> _genderOptions = ['Male', 'Female', 'Other'];
-  final List<String> _bloodGroupOptions = [
-    'A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'
-  ];
 
   @override
   void dispose() {
@@ -452,17 +448,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                     const SizedBox(height: 14),
 
-                    // Blood Group dropdown
-                    _buildLabel('Blood Group'),
-                    _buildDropdown(
-                      value: _selectedBloodGroup,
-                      hint: 'Blood Group',
-                      items: _bloodGroupOptions,
-                      onChanged: (val) =>
-                          setState(() => _selectedBloodGroup = val),
-                    ),
 
-                    const SizedBox(height: 28),
 
                     // Save button
                     SizedBox(
