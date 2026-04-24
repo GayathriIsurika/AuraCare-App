@@ -242,11 +242,11 @@ class ProfileScreen extends StatelessWidget {
                         (route) => false, // removes all previous screens
                   );
                 },
-                icon: const Icon(Icons.logout, color: Colors.black54,size: 25,),
+                icon: const Icon(Icons.logout, color: Colors.red,size: 25,),
                 label: const Text(
                   'Log out',
                   style: TextStyle(
-                    color: Colors.black54,
+                    color: Colors.red,
                     fontSize: 20,
                   ),
                 ),
