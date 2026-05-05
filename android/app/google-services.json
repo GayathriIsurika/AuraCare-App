@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "640878965353",
+    "project_id": "auracare-app",
+    "storage_bucket": "auracare-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:640878965353:android:bfbe1a8deb514caa4f68f8",
+        "android_client_info": {
+          "package_name": "com.example.auracare_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCC1GBAjNAVxObic21xhxkmly5yoGRNDfg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

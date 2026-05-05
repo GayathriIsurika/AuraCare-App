@@ -1,5 +1,6 @@
 import 'package:auracare_app/constant/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:auracare_app/services/firebase_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -13,6 +14,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  final FirebaseService _firebaseService = FirebaseService();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -178,12 +181,65 @@ class _SignupScreenState extends State<SignupScreen> {
                         width: double.infinity,
                         height: 52,
                         child: ElevatedButton(
-                          onPressed: () {
-                            // TODO: Add signup logic here
-                            Navigator.pushReplacementNamed(
-                              context,
-                              '/home',
+                          onPressed: _isLoading
+                              ? null
+                              : () async {
+
+                            // ── Validate BEFORE calling Firebase ──
+                            if (_nameController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please enter your name'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                              return; // ← stops here, no Firebase call
+                            }
+
+                            if (_emailController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please enter your email'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                              return;
+                            }
+
+                            if (_passwordController.text.trim().length < 6) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Password must be at least 6 characters'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                              return;
+                            }
+
+                            setState(() => _isLoading = true);
+
+                            // ← Save BEFORE await
+                            final navigator = Navigator.of(context);
+                            final messenger = ScaffoldMessenger.of(context);
+
+                            String? error = await _firebaseService.signUp(
+                              email: _emailController.text.trim(),
+                              password: _passwordController.text.trim(),
+                              fullName: _nameController.text.trim(),
                             );
+
+                            setState(() => _isLoading = false);
+
+                            if (error == null) {
+                              navigator.pushReplacementNamed('/dashboard');
+                            } else {
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text(error),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: buttonStart,
@@ -192,7 +248,16 @@ class _SignupScreenState extends State<SignupScreen> {
                             ),
                             elevation: 0,
                           ),
-                          child: const Text(
+                          child: _isLoading
+                              ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                              : const Text(
                             'Sign up',
                             style: TextStyle(
                               fontSize: 16,

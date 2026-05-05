@@ -39,6 +39,11 @@ dependencies:
   image_picker: ^1.0.7
   file_picker: ^8.0.0
   cunning_document_scanner: ^1.4.0
+  # ── Firebase ──────────────────────────────
+  firebase_core: ^2.27.0          # ← required for all Firebase
+  firebase_auth: ^4.17.0          # ← for login/signup
+  cloud_firestore: ^4.15.0        # ← for storing user data
+  firebase_storage: ^11.6.0       # ← for storing profile images
 
 dev_dependencies:
   flutter_test:
