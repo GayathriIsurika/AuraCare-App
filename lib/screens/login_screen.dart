@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:auracare_app/constant/app_colors.dart';
+import 'package:auracare_app/services/firebase_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,6 +13,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  final FirebaseService _firebaseService = FirebaseService();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -131,9 +134,26 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: () {
-                            // TODO: Add your login logic here
-                            Navigator.pushReplacementNamed(context, '/home');
+                          onPressed: () async {
+                            setState(() => _isLoading = true);
+
+                            String? error = await _firebaseService.login(
+                              email: _emailController.text.trim(),
+                              password: _passwordController.text.trim(),
+                            );
+
+                            setState(() => _isLoading = false);
+
+                            if (error == null) {
+                              Navigator.pushReplacementNamed(context, '/home');
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(error),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: buttonStart,
