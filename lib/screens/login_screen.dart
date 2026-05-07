@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:auracare_app/constant/app_colors.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:auracare_app/services/firebase_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -196,8 +197,32 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: double.infinity,
                         height: 50,
                         child: OutlinedButton.icon(
-                          onPressed: () {
-                            // TODO: Add Google sign in logic
+                          onPressed: _isLoading
+                              ? null  // disable while loading
+                              : () async {
+                            setState(() => _isLoading = true);
+
+                            // Call Google sign in
+                            String? error = await _firebaseService.signInWithGoogle();
+
+                            setState(() => _isLoading = false);
+
+                            if (error == null) {
+                              // ── Success → go to dashboard ──
+                              if (mounted) {
+                                Navigator.pushReplacementNamed(context, '/home');
+                              }
+                            } else if (error != 'Sign in cancelled') {
+                              // ── Show error (ignore if user just cancelled) ──
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(error),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
                           },
                           icon: Image.asset(
                             'assets/images/google_icon.png',
@@ -213,9 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(
-                              color: Color(0xFFDDDDDD),
-                            ),
+                            side: const BorderSide(color: Color(0xFFDDDDDD)),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -223,8 +246,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-
-                      const SizedBox(height: 16),
 
                       // ── Sign Up Link ──
                       GestureDetector(

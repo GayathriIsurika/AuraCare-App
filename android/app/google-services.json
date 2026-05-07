@@ -12,7 +12,20 @@
           "package_name": "com.example.auracare_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "640878965353-mmtk8r8ohoraactjqrvavvve52qjh59f.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.auracare_app",
+            "certificate_hash": "c75e39db3cd539da02314ef6a5691324c4579db3"
+          }
+        },
+        {
+          "client_id": "640878965353-si54sbau1kkc5f6v54bfb2l6o8auvprb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCC1GBAjNAVxObic21xhxkmly5yoGRNDfg"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "640878965353-si54sbau1kkc5f6v54bfb2l6o8auvprb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
