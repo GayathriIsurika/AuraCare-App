@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:io';
 
 class FirebaseService {
@@ -9,9 +10,67 @@ class FirebaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   // ── Get current logged in user ──
   User? get currentUser => _auth.currentUser;
+  // ════════════════════════════════════════
+  // ── Google Sign In ──
+  // ════════════════════════════════════════
+  Future<String?> signInWithGoogle() async {
+    try {
+      // Step 1: Open Google account picker
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      // User cancelled the picker
+      if (googleUser == null) return 'Sign in cancelled';
+
+      // Step 2: Get authentication details from Google
+      final GoogleSignInAuthentication googleAuth =
+      await googleUser.authentication;
+
+      // Step 3: Create Firebase credential using Google token
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Step 4: Sign in to Firebase with Google credential
+      UserCredential result = await _auth.signInWithCredential(credential);
+      User? user = result.user;
+
+      if (user == null) return 'Sign in failed';
+
+      // Step 5: Check if this is a NEW user
+      // If new → save their profile to Firestore
+      // If existing → skip (data already exists)
+      if (result.additionalUserInfo?.isNewUser == true) {
+        await _firestore.collection('users').doc(user.uid).set({
+          'fullName': user.displayName ?? '',
+          'email': user.email ?? '',
+          'uid': user.uid,
+          'profileImageUrl': user.photoURL ?? '',
+          'username': '',
+          'phone': '',
+          'location': '',
+          'dateOfBirth': '',
+          'gender': '',
+          'createdAt': DateTime.now().toIso8601String(),
+        });
+      }
+
+      return null; // null = success
+
+    } catch (e) {
+      return e.toString(); // return error message
+    }
+  }
+
+  // ── Sign out from Google too ──
+  Future<void> logout() async {
+    await _googleSignIn.signOut(); // ← sign out from Google
+    await _auth.signOut();         // ← sign out from Firebase
+  }
 
   // ════════════════════════════════════════
   // AUTH METHODS
@@ -69,10 +128,6 @@ class FirebaseService {
     }
   }
 
-  // ── Log out ──
-  Future<void> logout() async {
-    await _auth.signOut();
-  }
 
   // ════════════════════════════════════════
   // USER PROFILE METHODS
