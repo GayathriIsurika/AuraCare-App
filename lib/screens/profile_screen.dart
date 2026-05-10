@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'edit_profile_screen.dart';
 import 'package:auracare_app/constant/app_colors.dart';
 import 'medical_details_screen.dart';
-import 'package:auracare_app/screens/emergency_sos_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -44,7 +43,6 @@ class ProfileScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             // ── Profile Card (blue card with photo, name, email) ──
             GestureDetector(
               onTap: () {
@@ -61,7 +59,7 @@ class ProfileScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [buttonStart,buttonEnd],
+                    colors: [buttonStart, buttonEnd],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -98,18 +96,12 @@ class ProfileScreen extends StatelessWidget {
                         SizedBox(height: 4),
                         Text(
                           'smithdisanayaka125@gmail.com',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                          ),
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
                         ),
                         SizedBox(height: 2),
                         Text(
                           '@smith125',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                          ),
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
                         ),
                       ],
                     ),
@@ -181,27 +173,26 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
 
-
             const SizedBox(height: 24),
 
             // ── Action Buttons List ──
             // Medical Details button
             _buildActionButton(
-              icon:  Icons.medical_information_outlined,
+              icon: Icons.medical_information_outlined,
               label: 'Medical Details',
               buttonColor: buttonStart,
               textColor: Colors.black,
-              onTap: () { Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MedicalDetailsScreen(),
-                ),
-              );
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MedicalDetailsScreen(),
+                  ),
+                );
               },
             ),
 
             const SizedBox(height: 32),
-
 
             // Manage Emergency Contacts (red color)
             _buildActionButton(
@@ -239,16 +230,13 @@ class ProfileScreen extends StatelessWidget {
                   Navigator.pushNamedAndRemoveUntil(
                     context,
                     '/login',
-                        (route) => false, // removes all previous screens
+                    (route) => false, // removes all previous screens
                   );
                 },
-                icon: const Icon(Icons.logout, color: Colors.red,size: 25,),
+                icon: const Icon(Icons.logout, color: Colors.red, size: 25),
                 label: const Text(
                   'Log out',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 20,
-                  ),
+                  style: TextStyle(color: Colors.red, fontSize: 20),
                 ),
               ),
             ),
