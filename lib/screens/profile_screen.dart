@@ -1,24 +1,64 @@
 import 'package:flutter/material.dart';
-import 'edit_profile_screen.dart';
 import 'package:auracare_app/constant/app_colors.dart';
-import 'medical_details_screen.dart';
-import 'package:auracare_app/screens/emergency_sos_screen.dart';
+import 'package:auracare_app/screens/edit_profile_screen.dart';
+import 'package:auracare_app/screens/medical_details_screen.dart';
+import 'package:auracare_app/services/firebase_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+
+  final FirebaseService _firebaseService = FirebaseService();
+
+  // ── Stores user data loaded from Firebase ──
+  Map<String, dynamic>? _userData;
+  bool _isLoading = true; // shows spinner while loading
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData(); // load data when screen opens
+  }
+
+  // ── Load user profile from Firestore ──
+  Future<void> _loadUserData() async {
+    setState(() => _isLoading = true);
+
+    final data = await _firebaseService.getUserProfile();
+
+    setState(() {
+      _userData = data;
+      _isLoading = false;
+    });
+  }
+
+  // ── Get initials from full name for avatar ──
+  // Example: "Smith Disanayaka" → "SD"
+  String _getInitials(String? fullName) {
+    if (fullName == null || fullName.isEmpty) return '?';
+    List<String> parts = fullName.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return parts[0][0].toUpperCase();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: background,
-
-      // ── AppBar with back and settings icons ──
       appBar: AppBar(
         backgroundColor: const Color(0xFFEAF4FB),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context), // goes back to dashboard
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Profile',
@@ -32,36 +72,44 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: Colors.black),
-            onPressed: () {
-              // TODO: Navigate to settings screen
-            },
+            onPressed: () {},
           ),
         ],
       ),
 
-      body: SingleChildScrollView(
+      // ── Show loading spinner while data loads ──
+      body: _isLoading
+          ? const Center(
+        child: CircularProgressIndicator(
+          color: buttonStart,
+        ),
+      )
+          : SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            // ── Profile Card (blue card with photo, name, email) ──
+            // ── Profile Card ──
+            // Shows real data from Firebase
             GestureDetector(
-              onTap: () {
-                // Tapping profile card opens Edit Profile
-                Navigator.push(
+              onTap: () async {
+                // Wait for edit screen to finish
+                // then reload data to show updated info
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => const EditProfileScreen(),
                   ),
                 );
+                _loadUserData(); // ← reload after coming back
               },
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [buttonStart,buttonEnd],
+                    colors: [buttonStart, buttonEnd],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -69,49 +117,76 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    // Profile photo circle
+
+                    // ── Profile Photo ──
                     CircleAvatar(
                       radius: 32,
-                      backgroundColor: Colors.white.withOpacity(0.3),
-                      child: const Text(
-                        'SD', // initials - replace with Image.asset for real photo
-                        style: TextStyle(
+                      backgroundColor:
+                      Colors.white.withValues(alpha: 0.3),
+                      // Show network image if available
+                      backgroundImage: (_userData?['profileImageUrl'] != null &&
+                          _userData!['profileImageUrl'].toString().isNotEmpty)
+                          ? NetworkImage(_userData!['profileImageUrl'])
+                          : null,
+                      child: (_userData?['profileImageUrl'] == null ||
+                          _userData!['profileImageUrl'].toString().isEmpty)
+                          ? Text(
+                        // Show initials from real name
+                        _getInitials(_userData?['fullName']),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 20,
                         ),
+                      )
+                          : null,
+                    ),
+
+                    const SizedBox(width: 16),
+
+                    // ── Name, Email, Username from Firebase ──
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            // Show real name or placeholder
+                            _userData?['fullName'] ?? 'Your Name',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _userData?['email'] ?? '',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                            overflow: TextOverflow.ellipsis, // cuts long email
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _userData?['username'] != null &&
+                                _userData!['username'].toString().isNotEmpty
+                                ? '@${_userData!['username']}'
+                                : '',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    // Name, email, username
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Smith Disanayaka',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'smithdisanayaka125@gmail.com',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          '@smith125',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
+
+                    // ── Edit arrow icon ──
+                    const Icon(
+                      Icons.arrow_forward_ios,
+                      color: Colors.white70,
+                      size: 16,
                     ),
                   ],
                 ),
@@ -132,7 +207,6 @@ class ProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // Personal details card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -142,24 +216,62 @@ class ProfileScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // Each detail row: icon + label
-                  _buildDetailRow(Icons.location_on_outlined, 'Tissamaharama'),
-                  _buildDetailRow(Icons.cake_outlined, '04/02/2002'),
-                  _buildDetailRow(Icons.person_outline, 'Male'),
+
+                  // ── Show real data or placeholder text ──
+                  if (_userData?['location'] != null &&
+                      _userData!['location'].toString().isNotEmpty)
+                    _buildDetailRow(
+                      Icons.location_on_outlined,
+                      _userData!['location'],
+                    ),
+
+                  if (_userData?['dateOfBirth'] != null &&
+                      _userData!['dateOfBirth'].toString().isNotEmpty)
+                    _buildDetailRow(
+                      Icons.cake_outlined,
+                      _userData!['dateOfBirth'],
+                    ),
+
+                  if (_userData?['gender'] != null &&
+                      _userData!['gender'].toString().isNotEmpty)
+                    _buildDetailRow(
+                      Icons.person_outline,
+                      _userData!['gender'],
+                    ),
+
+                  // ── Show placeholder if no data yet ──
+                  if ((_userData?['location'] == null ||
+                      _userData!['location'].toString().isEmpty) &&
+                      (_userData?['dateOfBirth'] == null ||
+                          _userData!['dateOfBirth'].toString().isEmpty) &&
+                      (_userData?['gender'] == null ||
+                          _userData!['gender'].toString().isEmpty))
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'No personal details yet. Tap Edit to add.',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
 
                   const SizedBox(height: 8),
 
-                  // Edit button
+                  // ── Edit Button ──
                   Align(
                     alignment: Alignment.centerRight,
                     child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.push(
+                      onPressed: () async {
+                        await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const EditProfileScreen(),
+                            builder: (context) =>
+                            const EditProfileScreen(),
                           ),
                         );
+                        _loadUserData(); // reload after edit
                       },
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: buttonStart),
@@ -181,29 +293,27 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
 
-
             const SizedBox(height: 24),
 
-            // ── Action Buttons List ──
-            // Medical Details button
+            // ── Medical Details Button ──
             _buildActionButton(
-              icon:  Icons.medical_information_outlined,
+              icon: Icons.medical_information_outlined,
               label: 'Medical Details',
               buttonColor: buttonStart,
               textColor: Colors.black,
-              onTap: () { Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MedicalDetailsScreen(),
-                ),
-              );
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MedicalDetailsScreen(),
+                  ),
+                );
               },
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 12),
 
-
-            // Manage Emergency Contacts (red color)
+            // ── Emergency Contacts Button ──
             _buildActionButton(
               icon: Icons.phone_outlined,
               label: 'Manage Emergency Contacts',
@@ -216,9 +326,9 @@ class ProfileScreen extends StatelessWidget {
               },
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 12),
 
-            // Reminder Setting button
+            // ── Reminder Setting Button ──
             _buildActionButton(
               icon: Icons.notifications_outlined,
               label: 'Reminder Setting',
@@ -234,15 +344,19 @@ class ProfileScreen extends StatelessWidget {
             // ── Log Out Button ──
             Center(
               child: TextButton.icon(
-                onPressed: () {
-                  // Log out → go back to welcome screen
+                onPressed: () async {
+                  await _firebaseService.logout(); // ← Firebase logout
                   Navigator.pushNamedAndRemoveUntil(
                     context,
                     '/login',
-                        (route) => false, // removes all previous screens
+                        (route) => false,
                   );
                 },
-                icon: const Icon(Icons.logout, color: Colors.red,size: 25,),
+                icon: const Icon(
+                  Icons.logout,
+                  color: Colors.red,
+                  size: 25,
+                ),
                 label: const Text(
                   'Log out',
                   style: TextStyle(
@@ -260,7 +374,6 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // ── Helper: builds each personal detail row ──
   Widget _buildDetailRow(IconData icon, String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
@@ -277,7 +390,6 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // ── Helper: builds each action button ──
   Widget _buildActionButton({
     required IconData icon,
     required String label,
