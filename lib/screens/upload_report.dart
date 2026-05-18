@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../widgets/fab_menu.dart';
-import '../widgets/filter_sheet.dart';
 import '../widgets/bottom_nav_bar.dart';
 
 class MedicalRecord {
@@ -136,7 +135,7 @@ String _fullMonthLabel(String date) {
     'Jul': 'JULY 2023',
     'Aug': 'AUGUST 2023',
     'Sep': 'SEPTEMBER 2023',
-    'Oct': 'THIS MONTH',
+    'Oct': 'OCTOBER 2023',
     'Nov': 'NOVEMBER 2023',
     'Dec': 'DECEMBER 2023',
   };
@@ -154,7 +153,7 @@ class UploadReportScreen extends StatefulWidget {
 
 class _UploadReportScreenState extends State<UploadReportScreen> {
   int _selectedTab = 0;
-  FilterOptions _activeFilters = FilterOptions();
+  String _searchQuery = '';
 
   // Tab definitions: label + which category to filter (null = All)
   final List<Map<String, dynamic>> _tabs = [
@@ -165,137 +164,22 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     {'label': 'Consultations', 'filter': 'consultation'},
   ];
 
-  // Returns filtered records based on selected tab
   List<MedicalRecord> get _filteredRecords {
     List<MedicalRecord> records = List.from(allRecords);
 
-    //Filter by tab category
     final filter = _tabs[_selectedTab]['filter'];
     if (filter != null) {
       records = records.where((r) => r.category == filter).toList();
     }
 
-    //Filter by selected doctors
-    if (_activeFilters.selectedDoctors.isNotEmpty) {
+    if (_searchQuery.isNotEmpty) {
       records = records.where((r) {
-        return _activeFilters.selectedDoctors.any(
-          (doc) => r.subtitle.contains(doc),
-        );
+        return r.title.toLowerCase().contains(_searchQuery) ||
+            r.subtitle.toLowerCase().contains(_searchQuery);
       }).toList();
     }
-
-    //Filter by selected facilities
-    if (_activeFilters.selectedFacilities.isNotEmpty) {
-      records = records.where((r) {
-        return _activeFilters.selectedFacilities.any(
-          (fac) => r.subtitle.contains(fac),
-        );
-      }).toList();
-    }
-
-    //Filter by date range
-    records = _applyDateFilter(records);
-
-    //Sort
-    records = _applySorting(records);
 
     return records;
-  }
-
-  List<MedicalRecord> _applyDateFilter(List<MedicalRecord> records) {
-    final now = DateTime.now();
-    final range = _activeFilters.dateRange;
-
-    if (range == 'All Time') return records;
-
-    return records.where((r) {
-      final parts = r.date.split(' ');
-      if (parts.length < 2) return true;
-
-      const monthMap = {
-        'Jan': 1,
-        'Feb': 2,
-        'Mar': 3,
-        'Apr': 4,
-        'May': 5,
-        'Jun': 6,
-        'Jul': 7,
-        'Aug': 8,
-        'Sep': 9,
-        'Oct': 10,
-        'Nov': 11,
-        'Dec': 12,
-      };
-
-      final month = monthMap[parts[0]] ?? 1;
-      final day = int.tryParse(parts[1]) ?? 1;
-      final recordDate = DateTime(2023, month, day);
-
-      if (range == 'Last 30 Days') {
-        return recordDate.isAfter(now.subtract(const Duration(days: 30)));
-      } else if (range == 'Last 6 Months') {
-        return recordDate.isAfter(now.subtract(const Duration(days: 180)));
-      } else if (range == 'This Year') {
-        return recordDate.year == now.year;
-      }
-      return true;
-    }).toList();
-  }
-
-  List<MedicalRecord> _applySorting(List<MedicalRecord> records) {
-    const monthMap = {
-      'Jan': 1,
-      'Feb': 2,
-      'Mar': 3,
-      'Apr': 4,
-      'May': 5,
-      'Jun': 6,
-      'Jul': 7,
-      'Aug': 8,
-      'Sep': 9,
-      'Oct': 10,
-      'Nov': 11,
-      'Dec': 12,
-    };
-
-    DateTime parseDate(String date) {
-      final parts = date.split(' ');
-      if (parts.length < 2) return DateTime(2023);
-      final month = monthMap[parts[0]] ?? 1;
-      final day = int.tryParse(parts[1]) ?? 1;
-      return DateTime(2023, month, day);
-    }
-
-    final sorted = List<MedicalRecord>.from(records);
-
-    if (_activeFilters.sortBy == 'Newest First') {
-      sorted.sort((a, b) => parseDate(b.date).compareTo(parseDate(a.date)));
-    } else if (_activeFilters.sortBy == 'Oldest First') {
-      sorted.sort((a, b) => parseDate(a.date).compareTo(parseDate(b.date)));
-    } else if (_activeFilters.sortBy == 'A-Z') {
-      sorted.sort((a, b) => a.title.compareTo(b.title));
-    }
-
-    return sorted;
-  }
-
-  void _openFilterSheet() async {
-    final result = await showModalBottomSheet<FilterOptions>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.75,
-        maxChildSize: 0.95,
-        minChildSize: 0.4,
-        builder: (_, scrollController) =>
-            FilterBottomSheet(currentFilters: _activeFilters),
-      ),
-    );
-
-    if (result != null) {
-      setState(() => _activeFilters = result);
-    }
   }
 
   @override
@@ -334,8 +218,6 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
             const SizedBox(height: 12),
 
             // Show active filter chips
-            if (_activeFilters.isActive) _buildActiveFilterChips(),
-
             const SizedBox(height: 12),
 
             // Records list
@@ -372,50 +254,15 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: TextField(
-        decoration: InputDecoration(
+        onChanged: (value) {
+          setState(() => _searchQuery = value.toLowerCase().trim());
+        },
+        decoration: const InputDecoration(
           hintText: 'Search records...',
-          hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-          prefixIcon: const Icon(Icons.search, color: Colors.grey),
-          suffixIcon: GestureDetector(
-            onTap: _openFilterSheet,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  margin: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: _activeFilters.isActive
-                        ? const Color(0xFF4A90D9)
-                        : const Color(0xFFDDEEFB),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.tune,
-                    color: _activeFilters.isActive
-                        ? Colors.white
-                        : const Color(0xFF4A90D9),
-                    size: 20,
-                  ),
-                ),
-                // Badge dot when filters are active
-                if (_activeFilters.isActive)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.orange,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
+          hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
+          prefixIcon: Icon(Icons.search, color: Colors.grey),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          contentPadding: EdgeInsets.symmetric(vertical: 14),
         ),
       ),
     );
@@ -447,138 +294,6 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
             ),
           );
         }),
-      ),
-    );
-  }
-
-  Widget _buildActiveFilterChips() {
-    final chips = <Widget>[];
-
-    // Sort chip
-    if (_activeFilters.sortBy != 'Newest First') {
-      chips.add(
-        _filterChip(
-          label: _activeFilters.sortBy,
-          onRemove: () => setState(() {
-            _activeFilters.sortBy = 'Newest First';
-          }),
-        ),
-      );
-    }
-
-    // Date chip
-    if (_activeFilters.dateRange != 'All Time') {
-      chips.add(
-        _filterChip(
-          label: _activeFilters.dateRange,
-          onRemove: () => setState(() {
-            _activeFilters.dateRange = 'All Time';
-          }),
-        ),
-      );
-    }
-
-    // Doctor chips
-    for (final doc in _activeFilters.selectedDoctors) {
-      chips.add(
-        _filterChip(
-          label: doc,
-          onRemove: () => setState(() {
-            _activeFilters.selectedDoctors.remove(doc);
-          }),
-        ),
-      );
-    }
-
-    // Facility chips
-    for (final fac in _activeFilters.selectedFacilities) {
-      chips.add(
-        _filterChip(
-          label: fac,
-          onRemove: () => setState(() {
-            _activeFilters.selectedFacilities.remove(fac);
-          }),
-        ),
-      );
-    }
-
-    // Format chips
-    for (final fmt in _activeFilters.selectedFormats) {
-      chips.add(
-        _filterChip(
-          label: fmt,
-          onRemove: () => setState(() {
-            _activeFilters.selectedFormats.remove(fmt);
-          }),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(children: chips),
-        ),
-        const SizedBox(height: 6),
-        // Results count + clear all
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '${_filteredRecords.length} result(s) found',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFF4A90D9),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            GestureDetector(
-              onTap: () => setState(() {
-                _activeFilters = FilterOptions();
-              }),
-              child: const Text(
-                'Clear All',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.red,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _filterChip({required String label, required VoidCallback onRemove}) {
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFFDDEEFB),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF4A90D9)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF4A90D9),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(width: 6),
-          GestureDetector(
-            onTap: onRemove,
-            child: const Icon(Icons.close, size: 14, color: Color(0xFF4A90D9)),
-          ),
-        ],
       ),
     );
   }
