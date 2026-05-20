@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:auracare_app/constant/app_colors.dart';
+import 'medical_details_screen.dart';
 import 'package:auracare_app/screens/edit_profile_screen.dart';
 import 'package:auracare_app/screens/medical_details_screen.dart';
 import 'package:auracare_app/services/firebase_service.dart';
@@ -89,6 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Profile Card (blue card with photo, name, email) ──
 
             // ── Profile Card ──
             // Shows real data from Firebase
@@ -158,6 +160,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'smithdisanayaka125@gmail.com',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          '@smith125',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
                           const SizedBox(height: 4),
                           Text(
                             _userData?['email'] ?? '',
@@ -311,6 +325,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
             ),
 
+            const SizedBox(height: 32),
+
+            // Manage Emergency Contacts (red color)
             const SizedBox(height: 12),
 
             // ── Emergency Contacts Button ──
@@ -349,6 +366,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Navigator.pushNamedAndRemoveUntil(
                     context,
                     '/login',
+                    (route) => false, // removes all previous screens
+                  );
+                },
+                icon: const Icon(Icons.logout, color: Colors.red, size: 25),
                         (route) => false,
                   );
                 },
@@ -359,10 +380,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 label: const Text(
                   'Log out',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 20,
-                  ),
+                  style: TextStyle(color: Colors.red, fontSize: 20),
                 ),
               ),
             ),
