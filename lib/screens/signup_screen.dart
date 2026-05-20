@@ -48,7 +48,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     borderRadius: BorderRadius.circular(28),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 20,
                         offset: const Offset(0, 4),
                       ),
@@ -181,47 +181,11 @@ class _SignupScreenState extends State<SignupScreen> {
                         width: double.infinity,
                         height: 52,
                         child: ElevatedButton(
-                          onPressed: _isLoading
-                              ? null
-                              : () async {
-
-                            // ── Validate BEFORE calling Firebase ──
-                            if (_nameController.text.trim().isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Please enter your name'),
-                                  backgroundColor: Colors.orange,
-                                ),
-                              );
-                              return; // ← stops here, no Firebase call
-                            }
-
-                            if (_emailController.text.trim().isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Please enter your email'),
-                                  backgroundColor: Colors.orange,
-                                ),
-                              );
-                              return;
-                            }
-
-                            if (_passwordController.text.trim().length < 6) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Password must be at least 6 characters'),
-                                  backgroundColor: Colors.orange,
-                                ),
-                              );
-                              return;
-                            }
-
+                          onPressed: () async {
+                            // Show loading
                             setState(() => _isLoading = true);
 
-                            // ← Save BEFORE await
-                            final navigator = Navigator.of(context);
-                            final messenger = ScaffoldMessenger.of(context);
-
+                            // Call Firebase signup
                             String? error = await _firebaseService.signUp(
                               email: _emailController.text.trim(),
                               password: _passwordController.text.trim(),
@@ -229,11 +193,12 @@ class _SignupScreenState extends State<SignupScreen> {
                             );
 
                             setState(() => _isLoading = false);
-
                             if (error == null) {
-                              navigator.pushReplacementNamed('/dashboard');
+                              // Success → go to dashboard
+                              Navigator.pushReplacementNamed(context, '/home');
                             } else {
-                              messenger.showSnackBar(
+                              // Show error message
+                              ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(error),
                                   backgroundColor: Colors.red,

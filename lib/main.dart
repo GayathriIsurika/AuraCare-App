@@ -11,6 +11,7 @@ import 'screens/upload_report.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:auracare_app/screens/medical_details_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,7 +42,9 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => const SignupScreen(),
         '/dashboard': (context) => const Scaffold(),
         '/emergency': (context) => EmergencySosScreen(),
+        '/emergency': (context) =>  EmergencySosScreen(),
         '/reminder': (context) => const ReminderScreen(),
+        '/medical-details':(context)=> MedicalDetailsScreen(),
         '/upload': (context) => const UploadReportScreen(),
         '/nearby': (context) =>
             const PlaceholderScreen(title: 'Nearby Hospital'),

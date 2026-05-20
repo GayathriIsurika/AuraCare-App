@@ -1,49 +1,36 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:io';
 
 class FirebaseService {
 
-  // ── Firebase instances ──
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  // ── Get current logged in user ──
   User? get currentUser => _auth.currentUser;
+
   // ════════════════════════════════════════
-  // ── Google Sign In ──
+  // GOOGLE SIGN IN
   // ════════════════════════════════════════
   Future<String?> signInWithGoogle() async {
     try {
-      // Step 1: Open Google account picker
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-
-      // User cancelled the picker
       if (googleUser == null) return 'Sign in cancelled';
 
-      // Step 2: Get authentication details from Google
       final GoogleSignInAuthentication googleAuth =
       await googleUser.authentication;
 
-      // Step 3: Create Firebase credential using Google token
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // Step 4: Sign in to Firebase with Google credential
       UserCredential result = await _auth.signInWithCredential(credential);
       User? user = result.user;
-
       if (user == null) return 'Sign in failed';
 
-      // Step 5: Check if this is a NEW user
-      // If new → save their profile to Firestore
-      // If existing → skip (data already exists)
       if (result.additionalUserInfo?.isNewUser == true) {
         await _firestore.collection('users').doc(user.uid).set({
           'fullName': user.displayName ?? '',
@@ -58,41 +45,29 @@ class FirebaseService {
           'createdAt': DateTime.now().toIso8601String(),
         });
       }
-
-      return null; // null = success
-
+      return null;
     } catch (e) {
-      return e.toString(); // return error message
+      return e.toString();
     }
-  }
-
-  // ── Sign out from Google too ──
-  Future<void> logout() async {
-    await _googleSignIn.signOut(); // ← sign out from Google
-    await _auth.signOut();         // ← sign out from Firebase
   }
 
   // ════════════════════════════════════════
   // AUTH METHODS
   // ════════════════════════════════════════
-
-  // ── Sign Up with email and password ──
   Future<String?> signUp({
     required String email,
     required String password,
     required String fullName,
   }) async {
     try {
-      // Creates user in Firebase Auth
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // Save user profile data to Firestore
       await _firestore
-          .collection('users')           // users collection
-          .doc(result.user!.uid)         // document id = user's unique id
+          .collection('users')
+          .doc(result.user!.uid)
           .set({
         'fullName': fullName,
         'email': email,
@@ -106,13 +81,12 @@ class FirebaseService {
         'gender': '',
       });
 
-      return null; // null means success
+      return null;
     } on FirebaseAuthException catch (e) {
-      return e.message; // returns error message
+      return e.message;
     }
   }
 
-  // ── Login with email and password ──
   Future<String?> login({
     required String email,
     required String password,
@@ -122,27 +96,27 @@ class FirebaseService {
         email: email,
         password: password,
       );
-      return null; // null means success
+      return null;
     } on FirebaseAuthException catch (e) {
       return e.message;
     }
   }
 
+  Future<void> logout() async {
+    await _googleSignIn.signOut();
+    await _auth.signOut();
+  }
 
   // ════════════════════════════════════════
   // USER PROFILE METHODS
   // ════════════════════════════════════════
-
-  // ── Get user profile data from Firestore ──
   Future<Map<String, dynamic>?> getUserProfile() async {
     try {
       if (currentUser == null) return null;
-
       DocumentSnapshot doc = await _firestore
           .collection('users')
-          .doc(currentUser!.uid)  // get current user's document
+          .doc(currentUser!.uid)
           .get();
-
       if (doc.exists) {
         return doc.data() as Map<String, dynamic>;
       }
@@ -152,7 +126,6 @@ class FirebaseService {
     }
   }
 
-  // ── Update user profile data ──
   Future<String?> updateUserProfile({
     required String firstName,
     required String lastName,
@@ -165,11 +138,10 @@ class FirebaseService {
   }) async {
     try {
       if (currentUser == null) return 'User not logged in';
-
       await _firestore
           .collection('users')
           .doc(currentUser!.uid)
-          .update({                        // update only these fields
+          .update({
         'firstName': firstName,
         'lastName': lastName,
         'fullName': '$firstName $lastName',
@@ -181,48 +153,21 @@ class FirebaseService {
         'bloodGroup': bloodGroup,
         'updatedAt': DateTime.now().toIso8601String(),
       });
-
-      return null; // success
+      return null;
     } catch (e) {
       return e.toString();
     }
   }
 
-  // ── Upload profile image to Firebase Storage ──
+  // ── Storage disabled (requires paid plan) ──
+  // ← ONLY ONE uploadProfileImage method here
   Future<String?> uploadProfileImage(File imageFile) async {
-    try {
-      if (currentUser == null) return null;
-
-      // Create a reference path in Storage
-      // path: profile_images/userId.jpg
-      Reference ref = _storage
-          .ref()
-          .child('profile_images')
-          .child('${currentUser!.uid}.jpg');
-
-      // Upload the file
-      await ref.putFile(imageFile);
-
-      // Get the download URL
-      String downloadUrl = await ref.getDownloadURL();
-
-      // Save URL to Firestore
-      await _firestore
-          .collection('users')
-          .doc(currentUser!.uid)
-          .update({'profileImageUrl': downloadUrl});
-
-      return downloadUrl; // return URL to display image
-    } catch (e) {
-      return null;
-    }
+    return null; // TODO: Enable when upgrading to Blaze plan
   }
 
   // ════════════════════════════════════════
   // MEDICAL DETAILS METHODS
   // ════════════════════════════════════════
-
-  // ── Save medical details ──
   Future<String?> saveMedicalDetails({
     required String bloodType,
     required double weight,
@@ -233,13 +178,11 @@ class FirebaseService {
   }) async {
     try {
       if (currentUser == null) return 'User not logged in';
-
-      // Save to a sub-collection inside user document
       await _firestore
           .collection('users')
           .doc(currentUser!.uid)
-          .collection('medical')        // sub-collection
-          .doc('details')               // single document
+          .collection('medical')
+          .doc('details')
           .set({
         'bloodType': bloodType,
         'weight': weight,
@@ -249,25 +192,21 @@ class FirebaseService {
         'healthEvents': healthEvents,
         'updatedAt': DateTime.now().toIso8601String(),
       });
-
       return null;
     } catch (e) {
       return e.toString();
     }
   }
 
-  // ── Get medical details ──
   Future<Map<String, dynamic>?> getMedicalDetails() async {
     try {
       if (currentUser == null) return null;
-
       DocumentSnapshot doc = await _firestore
           .collection('users')
           .doc(currentUser!.uid)
           .collection('medical')
           .doc('details')
           .get();
-
       if (doc.exists) {
         return doc.data() as Map<String, dynamic>;
       }
