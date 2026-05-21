@@ -1,5 +1,4 @@
 import 'package:auracare_app/screens/emergency_sos_screen.dart';
-import 'package:auracare_app/screens/health_directory/health_directory_screen.dart';
 import 'package:auracare_app/screens/reminder_screen.dart';
 import 'package:auracare_app/widgets/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +12,7 @@ import 'screens/profile_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:auracare_app/screens/medical_details_screen.dart';
 
-void main() async {
+void main() async{
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(const MyApp());
@@ -40,8 +39,6 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignupScreen(),
-        '/dashboard': (context) => const Scaffold(),
-        '/emergency': (context) => EmergencySosScreen(),
         '/emergency': (context) =>  EmergencySosScreen(),
         '/reminder': (context) => const ReminderScreen(),
         '/medical-details':(context)=> MedicalDetailsScreen(),
@@ -50,7 +47,6 @@ class MyApp extends StatelessWidget {
             const PlaceholderScreen(title: 'Nearby Hospital'),
         '/ask_aura': (context) => const PlaceholderScreen(title: 'Ask Aura'),
         '/profile': (context) => const ProfileScreen(),
-        '/hospital': (context) => const HealthDirectoryScreen(),
       },
     );
   }

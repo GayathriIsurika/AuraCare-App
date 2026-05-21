@@ -12,7 +12,3 @@ const Color buttonStart = Color(0xFF72C6D5); // button start color
 const Color buttonEnd = Color(0xFF5DADE2); // button end color
 const Color buttonText = Color(0xFFFFFFFF); // white text for buttons
 const Color buttonColor = Color(0xFF5BB8D4);
-const Color primary = Color(0xFF4BBFD6);
-const Color cardBg = Color(0xFFFFFFFF);
-const Color primaryLight = Color(0xFFB2EAF3);
-const Color scaffoldBg = Color(0xFFE8F4F8);
