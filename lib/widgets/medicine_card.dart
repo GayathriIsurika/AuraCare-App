@@ -5,7 +5,6 @@ class MedicineCard extends StatefulWidget {
   final ReminderModel reminder;
 
   const MedicineCard({
-    super.key,
     required this.reminder,
     required Null Function() onMarkTaken,
   });

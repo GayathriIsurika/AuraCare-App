@@ -67,7 +67,10 @@ class WelcomeScreen extends StatelessWidget {
                     // ── Tagline ──
                     const Text(
                       'Your Health, Smarter',
-                      style: TextStyle(fontSize: 15, color: Color(0xFF5A7A9A)),
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Color(0xFF5A7A9A),
+                      ),
                     ),
 
                     const SizedBox(height: 40),
