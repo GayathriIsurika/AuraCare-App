@@ -9,9 +9,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-
 class _HomeScreenState extends State<HomeScreen> {
-
   final FirebaseService _firebaseService = FirebaseService();
 
   // ── Stores user data ──
@@ -40,8 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // Get initials for avatar
         // Example: "Smith Disanayaka" → "SD"
         if (nameParts.length >= 2) {
-          _userInitials =
-              '${nameParts[0][0]}${nameParts[1][0]}'.toUpperCase();
+          _userInitials = '${nameParts[0][0]}${nameParts[1][0]}'.toUpperCase();
         } else if (nameParts.isNotEmpty && nameParts[0].isNotEmpty) {
           _userInitials = nameParts[0][0].toUpperCase();
         }
@@ -52,8 +49,6 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _isLoading = false);
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -112,8 +107,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 // ── Shows real user name ──
                 Text(
                   _isLoading
-                      ? 'Hello!'                    // while loading
-                      : 'Hello, $_userName!',       // real name
+                      ? 'Hello!' // while loading
+                      : 'Hello, $_userName!', // real name
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 26,
@@ -134,21 +129,21 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: Colors.white.withValues(alpha: 0.3),
               child: _isLoading
                   ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              )
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
                   : Text(
-                _userInitials,              // ← real initials
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
+                      _userInitials, // ← real initials
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
             ),
           ],
         ),
@@ -237,9 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
       childAspectRatio: 1.1,
-      children: actions
-          .map((item) => _buildActionCard(item, context))
-          .toList(),
+      children: actions.map((item) => _buildActionCard(item, context)).toList(),
     );
   }
 
@@ -249,7 +242,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (item.label == 'Reminder') {
           Navigator.pushNamed(context, '/reminder');
         } else if (item.label == 'Upload Report') {
-          Navigator.pushNamed(context, '/vault');
+          Navigator.pushNamed(context, '/upload');
         } else if (item.label == 'Nearby Hospital') {
           // TODO: add map screen
         } else if (item.label == 'Ask Aura') {
@@ -298,7 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSOSButton(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.pushNamed(context, '/emergency-sos');
+        Navigator.pushNamed(context, '/emergency');
       },
       child: Container(
         width: double.infinity,

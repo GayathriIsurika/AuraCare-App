@@ -37,6 +37,13 @@
             {
               "client_id": "640878965353-si54sbau1kkc5f6v54bfb2l6o8auvprb.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "640878965353-51dpe2lrd4aeimaj2em6i3i108amsmi4.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.auracareApp"
+              }
             }
           ]
         }
