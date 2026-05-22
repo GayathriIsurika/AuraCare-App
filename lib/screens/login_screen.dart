@@ -179,16 +179,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       // ── Forgot Password ──
                       TextButton(
                         onPressed: () {
-                          // TODO: Navigate to forgot password screen
-                        },
-                        child: const Text(
-                          'Forgot password',
-                          style: TextStyle(
-                            color: Color(0xFF4A90D9),
-                            fontSize: 14,
+                              Navigator.pushNamed(context, '/forgot-password');
+                            },
+                            child: const Text(
+                              'Forgot password',
+                              style: TextStyle(
+                                color: Color(0xFF4A90D9),
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
+
 
                       const SizedBox(height: 8),
 

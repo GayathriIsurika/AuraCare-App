@@ -11,11 +11,11 @@ import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:auracare_app/screens/medical_details_screen.dart';
-import 'firebase_options.dart';
+import 'package:auracare_app/screens/forgot_password_screen.dart';
 
-void main() async {
+void main() async{
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -39,10 +39,11 @@ class MyApp extends StatelessWidget {
         '/welcome': (context) => const WelcomeScreen(),
         '/home': (context) => const HomeScreen(),
         '/login': (context) => const LoginScreen(),
+        '/forgot-password': (context) => const ForgotPasswordScreen(),
         '/signup': (context) => const SignupScreen(),
-        '/emergency': (context) => EmergencySosScreen(),
+        '/emergency': (context) =>  EmergencySosScreen(),
         '/reminder': (context) => const ReminderScreen(),
-        '/medical-details': (context) => MedicalDetailsScreen(),
+        '/medical-details':(context)=> MedicalDetailsScreen(),
         '/upload': (context) => const UploadReportScreen(),
         '/nearby': (context) =>
             const PlaceholderScreen(title: 'Nearby Hospital'),

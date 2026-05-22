@@ -87,18 +87,58 @@ class FirebaseService {
     }
   }
 
+// ── Login with email and password ──
   Future<String?> login({
     required String email,
     required String password,
   }) async {
     try {
-      await _auth.signInWithEmailAndPassword(
+      // ← Store result in a variable first
+      UserCredential result = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      // ← Now result is accessible here
+      if (result.user != null) {
+        await _ensureUserDocumentExists(result.user!);
+      }
+
       return null;
     } on FirebaseAuthException catch (e) {
       return e.message;
+    }
+  }
+  // ── Create user document if it doesn't exist ──
+  Future<void> _ensureUserDocumentExists(User user) async {
+    try {
+      // Check if document already exists
+      DocumentSnapshot doc = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      // If document does NOT exist → create it
+      if (!doc.exists) {
+        await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .set({
+          'fullName': user.displayName ?? '',
+          'email': user.email ?? '',
+          'uid': user.uid,
+          'createdAt': DateTime.now().toIso8601String(),
+          'profileImageUrl': '',
+          'username': '',
+          'phone': '',
+          'location': '',
+          'dateOfBirth': '',
+          'gender': '',
+        });
+      }
+    } catch (e) {
+      // Silently fail — don't block login
+      print('Error ensuring user document: $e');
     }
   }
 
