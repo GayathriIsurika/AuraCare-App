@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:auracare_app/constant/app_colors.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:auracare_app/services/firebase_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -34,7 +33,6 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
-
                 // ── White Card ──
                 Container(
                   width: double.infinity,
@@ -56,7 +54,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-
                       // ── Title ──
                       const Text(
                         'Login',
@@ -179,17 +176,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       // ── Forgot Password ──
                       TextButton(
                         onPressed: () {
-                              Navigator.pushNamed(context, '/forgot-password');
-                            },
-                            child: const Text(
-                              'Forgot password',
-                              style: TextStyle(
-                                color: Color(0xFF4A90D9),
-                                fontSize: 14,
-                              ),
-                            ),
+                          Navigator.pushNamed(context, '/forgot-password');
+                        },
+                        child: const Text(
+                          'Forgot password',
+                          style: TextStyle(
+                            color: Color(0xFF4A90D9),
+                            fontSize: 14,
                           ),
-
+                        ),
+                      ),
 
                       const SizedBox(height: 8),
 
@@ -199,32 +195,38 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 50,
                         child: OutlinedButton.icon(
                           onPressed: _isLoading
-                              ? null  // disable while loading
+                              ? null // disable while loading
                               : () async {
-                            setState(() => _isLoading = true);
+                                  setState(() => _isLoading = true);
 
-                            // Call Google sign in
-                            String? error = await _firebaseService.signInWithGoogle();
+                                  // Call Google sign in
+                                  String? error = await _firebaseService
+                                      .signInWithGoogle();
 
-                            setState(() => _isLoading = false);
+                                  setState(() => _isLoading = false);
 
-                            if (error == null) {
-                              // ── Success → go to dashboard ──
-                              if (mounted) {
-                                Navigator.pushReplacementNamed(context, '/home');
-                              }
-                            } else if (error != 'Sign in cancelled') {
-                              // ── Show error (ignore if user just cancelled) ──
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(error),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            }
-                          },
+                                  if (error == null) {
+                                    // ── Success → go to dashboard ──
+                                    if (mounted) {
+                                      Navigator.pushReplacementNamed(
+                                        context,
+                                        '/home',
+                                      );
+                                    }
+                                  } else if (error != 'Sign in cancelled') {
+                                    // ── Show error (ignore if user just cancelled) ──
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(error),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
                           icon: Image.asset(
                             'assets/images/google_icon.png',
                             width: 22,
