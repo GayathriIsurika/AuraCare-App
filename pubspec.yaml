@@ -69,6 +69,7 @@ flutter:
     - assets/images/welcome_hero.png
     - assets/images/auracare_logo.png
     - assets/images/google_icon.png
+    - assets/images/robot.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
