@@ -4,23 +4,21 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:io';
 
 class FirebaseService {
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   User? get currentUser => _auth.currentUser;
 
-  // ════════════════════════════════════════
   // GOOGLE SIGN IN
-  // ════════════════════════════════════════
+
   Future<String?> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return 'Sign in cancelled';
 
       final GoogleSignInAuthentication googleAuth =
-      await googleUser.authentication;
+          await googleUser.authentication;
 
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -51,9 +49,8 @@ class FirebaseService {
     }
   }
 
-  // ════════════════════════════════════════
   // AUTH METHODS
-  // ════════════════════════════════════════
+
   Future<String?> signUp({
     required String email,
     required String password,
@@ -65,10 +62,7 @@ class FirebaseService {
         password: password,
       );
 
-      await _firestore
-          .collection('users')
-          .doc(result.user!.uid)
-          .set({
+      await _firestore.collection('users').doc(result.user!.uid).set({
         'fullName': fullName,
         'email': email,
         'uid': result.user!.uid,
@@ -87,58 +81,15 @@ class FirebaseService {
     }
   }
 
-// ── Login with email and password ──
   Future<String?> login({
     required String email,
     required String password,
   }) async {
     try {
-      // ← Store result in a variable first
-      UserCredential result = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      // ← Now result is accessible here
-      if (result.user != null) {
-        await _ensureUserDocumentExists(result.user!);
-      }
-
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
       return null;
     } on FirebaseAuthException catch (e) {
       return e.message;
-    }
-  }
-  // ── Create user document if it doesn't exist ──
-  Future<void> _ensureUserDocumentExists(User user) async {
-    try {
-      // Check if document already exists
-      DocumentSnapshot doc = await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .get();
-
-      // If document does NOT exist → create it
-      if (!doc.exists) {
-        await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .set({
-          'fullName': user.displayName ?? '',
-          'email': user.email ?? '',
-          'uid': user.uid,
-          'createdAt': DateTime.now().toIso8601String(),
-          'profileImageUrl': '',
-          'username': '',
-          'phone': '',
-          'location': '',
-          'dateOfBirth': '',
-          'gender': '',
-        });
-      }
-    } catch (e) {
-      // Silently fail — don't block login
-      print('Error ensuring user document: $e');
     }
   }
 
@@ -147,9 +98,8 @@ class FirebaseService {
     await _auth.signOut();
   }
 
-  // ════════════════════════════════════════
   // USER PROFILE METHODS
-  // ════════════════════════════════════════
+
   Future<Map<String, dynamic>?> getUserProfile() async {
     try {
       if (currentUser == null) return null;
@@ -178,10 +128,7 @@ class FirebaseService {
   }) async {
     try {
       if (currentUser == null) return 'User not logged in';
-      await _firestore
-          .collection('users')
-          .doc(currentUser!.uid)
-          .update({
+      await _firestore.collection('users').doc(currentUser!.uid).update({
         'firstName': firstName,
         'lastName': lastName,
         'fullName': '$firstName $lastName',
@@ -205,9 +152,8 @@ class FirebaseService {
     return null; // TODO: Enable when upgrading to Blaze plan
   }
 
-  // ════════════════════════════════════════
   // MEDICAL DETAILS METHODS
-  // ════════════════════════════════════════
+
   Future<String?> saveMedicalDetails({
     required String bloodType,
     required double weight,
@@ -224,14 +170,14 @@ class FirebaseService {
           .collection('medical')
           .doc('details')
           .set({
-        'bloodType': bloodType,
-        'weight': weight,
-        'height': height,
-        'allergies': allergies,
-        'conditions': conditions,
-        'healthEvents': healthEvents,
-        'updatedAt': DateTime.now().toIso8601String(),
-      });
+            'bloodType': bloodType,
+            'weight': weight,
+            'height': height,
+            'allergies': allergies,
+            'conditions': conditions,
+            'healthEvents': healthEvents,
+            'updatedAt': DateTime.now().toIso8601String(),
+          });
       return null;
     } catch (e) {
       return e.toString();

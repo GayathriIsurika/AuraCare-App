@@ -96,7 +96,7 @@ class _UploadFabMenuState extends State<UploadFabMenu>
   Future<void> _pickFile() async {
     _close();
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
       );
