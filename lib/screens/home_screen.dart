@@ -244,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
         } else if (item.label == 'Upload Report') {
           Navigator.pushNamed(context, '/upload');
         } else if (item.label == 'Nearby Hospital') {
-          // TODO: add map screen
+          Navigator.pushNamed(context, '/hospital');
         } else if (item.label == 'Ask Aura') {
           // TODO: add AI chat screen
         }
