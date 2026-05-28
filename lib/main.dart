@@ -1,3 +1,4 @@
+import 'package:auracare_app/screens/chatbot_screen.dart';
 import 'package:auracare_app/screens/emergency_sos_screen.dart';
 import 'package:auracare_app/screens/health_directory/health_directory_screen.dart';
 import 'package:auracare_app/screens/reminder_screen.dart';
@@ -53,6 +54,7 @@ class MyApp extends StatelessWidget {
         '/ask_aura': (context) => const PlaceholderScreen(title: 'Ask Aura'),
         '/profile': (context) => const ProfileScreen(),
         '/hospital': (context) => const HealthDirectoryScreen(),
+        '/chatbot': (context) => const ChatbotScreen(),
       },
     );
   }
