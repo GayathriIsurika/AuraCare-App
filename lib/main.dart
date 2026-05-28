@@ -13,6 +13,7 @@ import 'screens/profile_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:auracare_app/screens/medical_details_screen.dart';
 import 'package:auracare_app/screens/forgot_password_screen.dart';
+import 'package:auracare_app/screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,9 +34,10 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
 
-      //  Set OnboardingScreen as the first screen
-      initialRoute: '/',
+
+      initialRoute: '/splash',
       routes: {
+        '/splash': (context) => const SplashScreen(),
         '/': (context) => const OnboardingScreen(),
         '/welcome': (context) => const WelcomeScreen(),
         '/home': (context) => const HomeScreen(),
