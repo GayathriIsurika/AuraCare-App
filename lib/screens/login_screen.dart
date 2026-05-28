@@ -26,7 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: background,
+      backgroundColor:  const Color(0xFF8ECFDF),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -61,6 +61,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1A1A2E),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+                      // ── Logo ──
+                      Image.asset(
+                        'assets/images/auracare_logo.png',
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.contain,
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      const Text(
+                        'AuraCare',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A3A5C),
                         ),
                       ),
 
@@ -279,24 +299,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
 
                 const SizedBox(height: 32),
-
-                // ── Bottom Logo ──
-                Image.asset(
-                  'assets/images/auracare_logo.png',
-                  width: 60,
-                  height: 60,
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'AuraCare',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF5A7A9A),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-
-                const SizedBox(height: 24),
               ],
             ),
           ),

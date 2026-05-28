@@ -42,13 +42,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      // Navigate to your Home/Login screen on last page
-      Navigator.pushReplacementNamed(context, '/welcome');
+
+      Navigator.pushReplacementNamed(context, '/signup');
     }
   }
 
   void _onSkipPressed() {
-    Navigator.pushReplacementNamed(context, '/welcome');
+    Navigator.pushReplacementNamed(context, '/signup');
   }
 
   @override

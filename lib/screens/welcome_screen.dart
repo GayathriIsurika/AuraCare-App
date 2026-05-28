@@ -109,7 +109,7 @@ class WelcomeScreen extends StatelessWidget {
                       height: 52,
                       child: OutlinedButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, '/signup');
+                          Navigator.pushNamed(context, '/');
                         },
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(
