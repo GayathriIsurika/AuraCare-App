@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:auracare_app/constant/app_colors.dart';
+import 'package:auracare_app/services/firebase_service.dart';
 
 class MedicalDetailsScreen extends StatefulWidget {
   const MedicalDetailsScreen({super.key});
@@ -10,31 +11,33 @@ class MedicalDetailsScreen extends StatefulWidget {
 
 class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
 
-  // ── Stored medical data ──
-  // These will be filled when user edits
-  String bloodType = 'O+';
-  double weight = 70;           // kg
-  double height = 175;          // cm
-  List<String> allergies = ['Penicillin', 'Peanuts'];
-  List<String> conditions = ['Diabetes Type 2', 'Asthma'];
-  List<String> healthEvents = ['Appendectomy - 2019'];
-  bool isEditing = false;       // toggles between view and edit mode
+  final FirebaseService _firebaseService = FirebaseService();
 
-  // ── Controllers for editing ──
+  // Stored medical data
+  String bloodType = 'O+';
+  double weight = 70;
+  double height = 175;
+  List<String> allergies = [];
+  List<String> conditions = [];
+  List<String> healthEvents = [];
+  bool isEditing = false;
+  bool _isLoading = true;
+  bool _isSaving = false;
+
+  // Controllers
   late TextEditingController _weightController;
   late TextEditingController _heightController;
   late TextEditingController _newAllergyController;
   late TextEditingController _newConditionController;
   late TextEditingController _newEventController;
 
-  // ── BMI calculation ──
+  // BMI calculation
   // Formula: weight(kg) / height(m)^2
   double get bmi {
-    double heightInMeters = height / 100; // convert cm to meters
+    double heightInMeters = height / 100;
     return weight / (heightInMeters * heightInMeters);
   }
 
-  // ── BMI category based on value ──
   String get bmiCategory {
     if (bmi < 18.5) return 'Underweight';
     if (bmi < 25) return 'Normal';
@@ -42,7 +45,6 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     return 'Obese';
   }
 
-  // ── BMI color based on category ──
   Color get bmiColor {
     if (bmi < 18.5) return Colors.blue;
     if (bmi < 25) return Colors.green;
@@ -53,12 +55,12 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize controllers with current values
     _weightController = TextEditingController(text: weight.toString());
     _heightController = TextEditingController(text: height.toString());
     _newAllergyController = TextEditingController();
     _newConditionController = TextEditingController();
     _newEventController = TextEditingController();
+    _loadMedicalData();
   }
 
   @override
@@ -69,6 +71,77 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     _newConditionController.dispose();
     _newEventController.dispose();
     super.dispose();
+  }
+
+  // Load existing medical data from Firebase
+  Future<void> _loadMedicalData() async {
+    setState(() => _isLoading = true);
+
+    final data = await _firebaseService.getMedicalDetails();
+
+    if (data != null && mounted) {
+      setState(() {
+        bloodType = data['bloodType'] ?? 'O+';
+        weight = (data['weight'] ?? 70).toDouble();
+        height = (data['height'] ?? 175).toDouble();
+
+        allergies = List<String>.from(data['allergies'] ?? []);
+        conditions = List<String>.from(data['conditions'] ?? []);
+        healthEvents = List<String>.from(data['healthEvents'] ?? []);
+
+
+        _weightController.text = weight.toString();
+        _heightController.text = height.toString();
+
+        _isLoading = false;
+      });
+    } else {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  //  Save medical data to Firebase
+  Future<void> _saveMedicalData() async {
+    setState(() => _isSaving = true);
+
+    // Save weight and height from controllers
+    weight = double.tryParse(_weightController.text) ?? weight;
+    height = double.tryParse(_heightController.text) ?? height;
+
+    // Call Firebase save
+    String? error = await _firebaseService.saveMedicalDetails(
+      bloodType: bloodType,
+      weight: weight,
+      height: height,
+      allergies: allergies,
+      conditions: conditions,
+      healthEvents: healthEvents,
+    );
+
+    setState(() {
+      _isSaving = false;
+      isEditing = false;
+    });
+
+    if (mounted) {
+      if (error == null) {
+        // Success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Medical details saved!'),
+            backgroundColor: buttonStart,
+          ),
+        );
+      } else {
+        // Error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -91,20 +164,29 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
         ),
         centerTitle: true,
         actions: [
-          // Edit / Done toggle button
-          TextButton(
+
+          _isSaving
+              ? const Padding(
+            padding: EdgeInsets.all(16),
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            ),
+          )
+              : TextButton(
             onPressed: () {
-              setState(() {
-                if (isEditing) {
-                  // Save values when done
-                  weight = double.tryParse(_weightController.text) ?? weight;
-                  height = double.tryParse(_heightController.text) ?? height;
-                }
-                isEditing = !isEditing; // toggle mode
-              });
+              if (isEditing) {
+                _saveMedicalData(); // save to Firebase when done
+              } else {
+                setState(() => isEditing = true); // enter edit mode
+              }
             },
             child: Text(
-              isEditing ? 'Done' : 'Edit',   // changes label based on mode
+              isEditing ? 'Save' : 'Edit', // changed Done to Save
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -115,17 +197,22 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
         ],
       ),
 
-      body: SingleChildScrollView(
+      // Show loading spinner while data loads
+      body: _isLoading
+          ? const Center(
+        child: CircularProgressIndicator(
+          color: buttonStart,
+        ),
+      )
+          : SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            // ── Row 1: Blood Type + BMI Cards ──
+            //  Blood Type , BMI
             Row(
               children: [
-
-                // Blood Type Card
                 Expanded(
                   child: _buildStatCard(
                     icon: Icons.water_drop_rounded,
@@ -137,23 +224,16 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
                     onEdit: () => _showBloodTypeDialog(),
                   ),
                 ),
-
                 const SizedBox(width: 12),
-
-                // BMI Card (auto calculated)
-                Expanded(
-                  child: _buildBMICard(),
-                ),
+                Expanded(child: _buildBMICard()),
               ],
             ),
 
             const SizedBox(height: 12),
 
-            // ── Row 2: Weight + Height Cards ──
+            // Weight , Height
             Row(
               children: [
-
-                // Weight Card
                 Expanded(
                   child: _buildMeasurementCard(
                     icon: Icons.monitor_weight_outlined,
@@ -165,10 +245,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
                     isEditing: isEditing,
                   ),
                 ),
-
                 const SizedBox(width: 12),
-
-                // Height Card
                 Expanded(
                   child: _buildMeasurementCard(
                     icon: Icons.height_rounded,
@@ -185,8 +262,12 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
 
             const SizedBox(height: 24),
 
-            // ── Allergies Section ──
-            _buildSectionTitle('Allergies', Icons.warning_amber_rounded, Colors.orange),
+            //  Allergies
+            _buildSectionTitle(
+              'Allergies',
+              Icons.warning_amber_rounded,
+              Colors.orange,
+            ),
             const SizedBox(height: 12),
             _buildChipSection(
               items: allergies,
@@ -197,8 +278,6 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
                   ? (item) => setState(() => allergies.remove(item))
                   : null,
             ),
-
-            // Add allergy input (only in edit mode)
             if (isEditing) ...[
               const SizedBox(height: 8),
               _buildAddItemRow(
@@ -217,8 +296,12 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
 
             const SizedBox(height: 24),
 
-            // ── Medical Conditions Section ──
-            _buildSectionTitle('Medical Conditions', Icons.medical_services_outlined, Colors.blue),
+            // Medical Conditions
+            _buildSectionTitle(
+              'Medical Conditions',
+              Icons.medical_services_outlined,
+              Colors.blue,
+            ),
             const SizedBox(height: 12),
             _buildChipSection(
               items: conditions,
@@ -229,7 +312,6 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
                   ? (item) => setState(() => conditions.remove(item))
                   : null,
             ),
-
             if (isEditing) ...[
               const SizedBox(height: 8),
               _buildAddItemRow(
@@ -238,7 +320,8 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
                 onAdd: () {
                   if (_newConditionController.text.trim().isNotEmpty) {
                     setState(() {
-                      conditions.add(_newConditionController.text.trim());
+                      conditions
+                          .add(_newConditionController.text.trim());
                       _newConditionController.clear();
                     });
                   }
@@ -248,15 +331,16 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
 
             const SizedBox(height: 24),
 
-            // ── Health Events Section ──
-            _buildSectionTitle('Significant Health Events', Icons.event_note_outlined, Colors.purple),
+            // Health Events
+            _buildSectionTitle(
+              'Significant Health Events',
+              Icons.event_note_outlined,
+              Colors.purple,
+            ),
             const SizedBox(height: 12),
-
-            // Health events shown as timeline cards
             ...healthEvents.asMap().entries.map((entry) {
               return _buildEventCard(entry.value, entry.key);
             }),
-
             if (isEditing) ...[
               const SizedBox(height: 8),
               _buildAddItemRow(
@@ -265,7 +349,8 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
                 onAdd: () {
                   if (_newEventController.text.trim().isNotEmpty) {
                     setState(() {
-                      healthEvents.add(_newEventController.text.trim());
+                      healthEvents
+                          .add(_newEventController.text.trim());
                       _newEventController.clear();
                     });
                   }
@@ -280,7 +365,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     );
   }
 
-  // ── Stat Card (Blood Type) ──
+  // Stat Card
   Widget _buildStatCard({
     required IconData icon,
     required Color iconColor,
@@ -306,7 +391,6 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon circle
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -318,10 +402,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
           const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
           const SizedBox(height: 4),
           Row(
@@ -335,7 +416,6 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
                   color: Colors.black87,
                 ),
               ),
-              // Show edit icon only in edit mode
               if (isEditing)
                 GestureDetector(
                   onTap: onEdit,
@@ -352,7 +432,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     );
   }
 
-  // ── BMI Card (special card with color indicator) ──
+  // BMI Card
   Widget _buildBMICard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -370,7 +450,6 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon circle
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -390,7 +469,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            bmi.toStringAsFixed(1),   // shows like "22.4"
+            bmi.toStringAsFixed(1),
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -398,9 +477,9 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          // BMI category badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            padding:
+            const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
               color: bmiColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
@@ -419,7 +498,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     );
   }
 
-  // ── Measurement Card (Weight / Height) ──
+  // Measurement Card
   Widget _buildMeasurementCard({
     required IconData icon,
     required Color iconColor,
@@ -459,8 +538,6 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
             style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
           const SizedBox(height: 4),
-
-          // Shows text field in edit mode, plain text in view mode
           isEditing
               ? TextField(
             controller: controller,
@@ -479,7 +556,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
               ),
               isDense: true,
               contentPadding: EdgeInsets.zero,
-              border: InputBorder.none, // no border box
+              border: InputBorder.none,
             ),
           )
               : Row(
@@ -511,7 +588,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     );
   }
 
-  // ── Section Title with icon ──
+  // Section Title
   Widget _buildSectionTitle(String title, IconData icon, Color color) {
     return Row(
       children: [
@@ -536,13 +613,13 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     );
   }
 
-  // ── Chips for Allergies and Conditions ──
+  // Chip Section
   Widget _buildChipSection({
     required List<String> items,
     required Color chipColor,
     required Color textColor,
     required Color borderColor,
-    Function(String)? onRemove,   // null means not editable
+    Function(String)? onRemove,
   }) {
     if (items.isEmpty) {
       return Text(
@@ -556,14 +633,15 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
       runSpacing: 8,
       children: items.map((item) {
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding:
+          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: chipColor,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: borderColor),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min, // shrink to content width
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 item,
@@ -573,7 +651,6 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              // Show X remove button only in edit mode
               if (onRemove != null) ...[
                 const SizedBox(width: 6),
                 GestureDetector(
@@ -588,14 +665,13 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     );
   }
 
-  // ── Timeline Event Card ──
+  // Event Card
   Widget _buildEventCard(String event, int index) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Timeline dot and line
           Column(
             children: [
               Container(
@@ -615,7 +691,6 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
             ],
           ),
           const SizedBox(width: 12),
-          // Event card
           Expanded(
             child: Container(
               padding: const EdgeInsets.all(12),
@@ -633,14 +708,15 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    event,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
+                  Expanded(
+                    child: Text(
+                      event,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
                     ),
                   ),
-                  // Remove button in edit mode
                   if (isEditing)
                     GestureDetector(
                       onTap: () {
@@ -661,7 +737,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     );
   }
 
-  // ── Add Item Row (text field + add button) ──
+  // Add Item Row
   Widget _buildAddItemRow({
     required TextEditingController controller,
     required String hint,
@@ -694,7 +770,6 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
           ),
         ),
         const SizedBox(width: 8),
-        // Add button
         GestureDetector(
           onTap: onAdd,
           child: Container(
@@ -710,7 +785,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     );
   }
 
-  // ── Blood Type Picker Dialog ──
+  // Blood Type Dialog
   void _showBloodTypeDialog() {
     final bloodTypes = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
@@ -729,8 +804,8 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
               final isSelected = type == bloodType;
               return GestureDetector(
                 onTap: () {
-                  setState(() => bloodType = type); // update selected
-                  Navigator.pop(context);            // close dialog
+                  setState(() => bloodType = type);
+                  Navigator.pop(context);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -741,7 +816,9 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
                     color: isSelected ? buttonStart : Colors.white,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: isSelected ? buttonStart : Colors.grey.shade300,
+                      color: isSelected
+                          ? buttonStart
+                          : Colors.grey.shade300,
                     ),
                   ),
                   child: Text(
