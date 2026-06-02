@@ -14,17 +14,17 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final FirebaseService _firebaseService = FirebaseService();
 
-  // ── Stores user data loaded from Firebase ──
+  // Stores user data loaded from Firebase
   Map<String, dynamic>? _userData;
-  bool _isLoading = true; // shows spinner while loading
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadUserData(); // load data when screen opens
+    _loadUserData();
   }
 
-  // ── Load user profile from Firestore ──
+  // Load user profile from Firestore
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
 
@@ -36,8 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  // ── Get initials from full name for avatar ──
-  // Example: "Smith Disanayaka" → "SD"
+  // Get initials from full name for avatar
   String _getInitials(String? fullName) {
     if (fullName == null || fullName.isEmpty) return '?';
     List<String> parts = fullName.trim().split(' ');
@@ -67,15 +66,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.black),
-            onPressed: () {},
-          ),
-        ],
       ),
 
-      // ── Show loading spinner while data loads ──
+      // Show loading spinner while data loads
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: buttonStart))
           : SingleChildScrollView(
@@ -95,7 +88,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           builder: (context) => const EditProfileScreen(),
                         ),
                       );
-                      _loadUserData(); // ← reload after coming back
+                      _loadUserData();
                     },
                     child: Container(
                       width: double.infinity,
@@ -165,7 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     fontSize: 12,
                                   ),
                                   overflow:
-                                      TextOverflow.ellipsis, // cuts long email
+                                      TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
@@ -184,7 +177,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
 
-                          // ── Edit arrow icon ──
+                          //  arrow icon
                           const Icon(
                             Icons.arrow_forward_ios,
                             color: Colors.white70,
@@ -197,7 +190,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   const SizedBox(height: 24),
 
-                  // ── Personal Details Section ──
+                  // Personal Details Section
                   const Text(
                     'Personal Details',
                     style: TextStyle(
@@ -218,7 +211,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     child: Column(
                       children: [
-                        // ── Show real data or placeholder text ──
+                        // Show real data or placeholder text
                         if (_userData?['location'] != null &&
                             _userData!['location'].toString().isNotEmpty)
                           _buildDetailRow(
@@ -240,7 +233,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             _userData!['gender'],
                           ),
 
-                        // ── Show placeholder if no data yet ──
+                        // Show placeholder if no data yet
                         if ((_userData?['location'] == null ||
                                 _userData!['location'].toString().isEmpty) &&
                             (_userData?['dateOfBirth'] == null ||
@@ -260,7 +253,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                         const SizedBox(height: 8),
 
-                        // ── Edit Button ──
+                        //  Edit Button
                         Align(
                           alignment: Alignment.centerRight,
                           child: OutlinedButton(
@@ -272,7 +265,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       const EditProfileScreen(),
                                 ),
                               );
-                              _loadUserData(); // reload after edit
+                              _loadUserData();
                             },
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(color: buttonStart),
@@ -296,7 +289,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   const SizedBox(height: 24),
 
-                  // ── Medical Details Button ──
+                  //  Medical Details Button
                   _buildActionButton(
                     icon: Icons.medical_information_outlined,
                     label: 'Medical Details',

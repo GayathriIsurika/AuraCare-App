@@ -16,7 +16,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   final FirebaseService _firebaseService = FirebaseService();
 
-  // ── Controllers ──
+  // Controllers
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _usernameController = TextEditingController();
@@ -29,18 +29,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final ImagePicker _picker = ImagePicker();
   String? _selectedGender;
   DateTime? _selectedDate;
-  bool _isLoading = false;      // save button loading
-  bool _isLoadingData = true;   // initial data loading
+  bool _isLoading = false;
+  bool _isLoadingData = true;
 
   final List<String> _genderOptions = ['Male', 'Female', 'Other'];
 
   @override
   void initState() {
     super.initState();
-    _loadExistingData(); // load existing data when screen opens
+    _loadExistingData();
   }
 
-  // ── Load existing profile data from Firebase ──
+  // Load existing profile data from Firebase
   Future<void> _loadExistingData() async {
     final data = await _firebaseService.getUserProfile();
 
@@ -59,7 +59,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         // Fill phone without country code
         final phone = data['phone'] ?? '';
         if (phone.length > 3) {
-          _phoneController.text = phone.substring(3); // remove +94
+          _phoneController.text = phone.substring(3);
         }
 
         // Set gender dropdown
@@ -203,17 +203,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  // ── Save profile to Firebase ──
+  // Save profile to Firebase
   Future<void> _saveProfile() async {
     setState(() => _isLoading = true);
 
     try {
-      // Step 1: Upload image if new one was picked
+      // Upload image if new one was picked
       if (_profileImage != null) {
         await _firebaseService.uploadProfileImage(_profileImage!);
       }
 
-      // Step 2: Format date as string
+      // Format date as string
       String dateString = '';
       if (_selectedDate != null) {
         dateString =
@@ -222,7 +222,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             '${_selectedDate!.year}';
       }
 
-      // Step 3: Save all profile fields to Firestore
+      // Save all profile fields to Firestore
       String? error = await _firebaseService.updateUserProfile(
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
@@ -289,7 +289,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         centerTitle: true,
         actions: [
-          // ── Tick button saves profile ──
+          // Tick button saves profile
           IconButton(
             icon: _isLoading
                 ? const SizedBox(
@@ -306,7 +306,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ],
       ),
 
-      // ── Show loading while fetching existing data ──
+      // Show loading while fetching existing data
       body: _isLoadingData
           ? const Center(
         child: CircularProgressIndicator(color: buttonStart),
@@ -319,7 +319,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Column(
             children: [
 
-              // ── Blue header with photo ──
+              // Blue header with photo
               Container(
                 width: double.infinity,
                 color: buttonStart,
@@ -339,7 +339,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               : null,
                           child: _profileImage == null
                               ? const Text(
-                            'SD',
+                            '',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 24,
@@ -373,7 +373,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
 
-              // ── Form Card ──
+              // Form Card
               Container(
                 margin: const EdgeInsets.all(20),
                 padding: const EdgeInsets.all(20),
@@ -506,7 +506,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     const SizedBox(height: 28),
 
-                    // ── Save Button ──
+                    // Save Button
                     SizedBox(
                       width: double.infinity,
                       height: 50,
