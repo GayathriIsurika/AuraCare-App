@@ -31,6 +31,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   DateTime? _selectedDate;
   bool _isLoading = false;
   bool _isLoadingData = true;
+  String _existingProfileImageUrl = '';
 
   final List<String> _genderOptions = ['Male', 'Female', 'Other'];
 
@@ -80,7 +81,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             }
           } catch (_) {}
         }
-
+        _existingProfileImageUrl = data['profileImageUrl'] ?? '';
         _isLoadingData = false;
       });
     } else {
@@ -335,16 +336,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           backgroundColor:
                           Colors.white.withValues(alpha: 0.3),
                           backgroundImage: _profileImage != null
-                              ? FileImage(_profileImage!)
+                              ? FileImage(_profileImage!) as ImageProvider
+                              : _existingProfileImageUrl.isNotEmpty
+                              ? NetworkImage(_existingProfileImageUrl)
                               : null,
-                          child: _profileImage == null
-                              ? const Text(
-                            '',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          child: _profileImage == null && _existingProfileImageUrl.isEmpty
+                              ? const Icon(                                  // ← show icon if no image
+                            Icons.person,
+                            color: Colors.white,
+                            size: 40,
                           )
                               : null,
                         ),
