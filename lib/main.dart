@@ -15,10 +15,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:auracare_app/screens/medical_details_screen.dart';
 import 'package:auracare_app/screens/forgot_password_screen.dart';
 import 'package:auracare_app/screens/splash_screen.dart';
+import 'package:auracare_app/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -34,7 +35,6 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4A90D9)),
         useMaterial3: true,
       ),
-
 
       initialRoute: '/splash',
       routes: {
