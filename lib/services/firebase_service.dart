@@ -2,11 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:io';
+import 'package:auracare_app/services/cloudinary_service.dart';
 
 class FirebaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final CloudinaryService _cloudinaryService = CloudinaryService();
 
   User? get currentUser => _auth.currentUser;
 
@@ -146,10 +148,30 @@ class FirebaseService {
     }
   }
 
-  // ── Storage disabled (requires paid plan) ──
-  // ← ONLY ONE uploadProfileImage method here
+  // ── Upload profile image using Cloudinary ──
   Future<String?> uploadProfileImage(File imageFile) async {
-    return null; // TODO: Enable when upgrading to Blaze plan
+    try {
+      if (currentUser == null) return null;
+
+      // Upload to Cloudinary
+      String? imageUrl = await _cloudinaryService.uploadProfileImage(
+        imageFile,
+        currentUser!.uid, // ← user ID for unique filename
+      );
+
+      if (imageUrl != null) {
+        // Save URL to Firestore
+        await _firestore
+            .collection('users')
+            .doc(currentUser!.uid)
+            .update({'profileImageUrl': imageUrl});
+
+        return imageUrl;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
   }
 
   // MEDICAL DETAILS METHODS

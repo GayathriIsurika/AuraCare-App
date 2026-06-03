@@ -15,6 +15,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ── Stores user data ──
   String _userName = 'User';
   String _userInitials = 'U';
+  String _profileImageUrl = '';
   bool _isLoading = true;
 
   @override
@@ -29,8 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (data != null && mounted) {
       setState(() {
-        // Get first name only for greeting
-        // Example: "Smith Disanayaka" → "Smith"
         final fullName = data['fullName'] ?? 'User';
         final nameParts = fullName.trim().split(' ');
         _userName = nameParts.isNotEmpty ? nameParts[0] : 'User';
@@ -42,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
         } else if (nameParts.isNotEmpty && nameParts[0].isNotEmpty) {
           _userInitials = nameParts[0][0].toUpperCase();
         }
+        _profileImageUrl = data['profileImageUrl'] ?? '';
 
         _isLoading = false;
       });
@@ -123,28 +123,33 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
 
-            // ── Avatar shows initials or loading ──
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: Colors.white.withValues(alpha: 0.3),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Text(
-                      _userInitials, // ← real initials
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-            ),
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: Colors.white.withValues(alpha: 0.3),
+                // ← Shows profile image if available, else initials
+                backgroundImage: _profileImageUrl.isNotEmpty
+                    ? NetworkImage(_profileImageUrl)
+                    : null,
+                child: _isLoading
+                    ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+                    : _profileImageUrl.isEmpty
+                    ? Text(
+                  _userInitials,         // ← shows initials if no image
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                )
+                    : null,
+              ),
           ],
         ),
       ),
