@@ -295,7 +295,7 @@ class _HealthDirectoryScreenState extends State<HealthDirectoryScreen> {
           Icon(
             Icons.search_off_rounded,
             size: 52,
-            color: textGrey.withOpacity(0.5),
+            color: textGrey.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 12),
           Text(message, style: TextStyle(color: textGrey, fontSize: 15)),

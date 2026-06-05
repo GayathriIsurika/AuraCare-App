@@ -18,21 +18,28 @@ const List<FaIconData> _contactIcons = [
 
 class ContactSheet extends StatefulWidget {
   final ContactModel? existing;
+  final bool lockName;
   final Function(String name, String phone, FaIconData icon) onSave;
 
-  const ContactSheet({super.key, this.existing, required this.onSave});
+  const ContactSheet({
+    super.key,
+    this.existing,
+    this.lockName = false,
+    required this.onSave,
+  });
 
-  // ── Call this from anywhere to open the sheet ──
   static void show(
     BuildContext context, {
     ContactModel? existing,
+    bool lockName = false, // ← new
     required Function(String name, String phone, FaIconData icon) onSave,
   }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => ContactSheet(existing: existing, onSave: onSave),
+      builder: (_) =>
+          ContactSheet(existing: existing, lockName: lockName, onSave: onSave),
     );
   }
 
@@ -102,62 +109,71 @@ class _ContactSheetState extends State<ContactSheet> {
             ),
             SizedBox(height: 20),
 
-            // ── Icon picker label ──
-            Text(
-              'Select Icon',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[600],
+            // ── Icon picker — hidden if name is locked ──
+            if (!widget.lockName) ...[
+              Text(
+                'Select Icon',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[600],
+                ),
               ),
-            ),
-            SizedBox(height: 10),
-
-            // ── Icon picker row ──
-            SizedBox(
-              height: 56,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _contactIcons.length,
-                separatorBuilder: (_, __) => SizedBox(width: 10),
-                itemBuilder: (_, i) {
-                  final icon = _contactIcons[i];
-                  final isSelected = _selectedIcon == icon;
-
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedIcon = icon),
-                    child: AnimatedContainer(
-                      duration: Duration(milliseconds: 200),
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: isSelected ? Colors.blue : Color(0xFFE3F2FD),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: isSelected ? Colors.blue : Colors.transparent,
-                          width: 2,
+              SizedBox(height: 10),
+              SizedBox(
+                height: 56,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _contactIcons.length,
+                  separatorBuilder: (_, _) => SizedBox(width: 10),
+                  itemBuilder: (_, i) {
+                    final icon = _contactIcons[i];
+                    final isSelected = _selectedIcon == icon;
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedIcon = icon),
+                      child: AnimatedContainer(
+                        duration: Duration(milliseconds: 200),
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.blue : Color(0xFFE3F2FD),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isSelected
+                                ? Colors.blue
+                                : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: Center(
+                          child: FaIcon(
+                            icon,
+                            size: 20,
+                            color: isSelected ? Colors.white : Colors.blue,
+                          ),
                         ),
                       ),
-                      child: Center(
-                        child: FaIcon(
-                          icon,
-                          size: 20,
-                          color: isSelected ? Colors.white : Colors.blue,
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
-            SizedBox(height: 18),
+              SizedBox(height: 18),
+            ],
 
-            // ── Name field ──
+            // ── Name field — disabled if lockName ──
             TextField(
               controller: _nameCtrl,
+              enabled: !widget.lockName,
               decoration: InputDecoration(
                 labelText: 'Name',
                 prefixIcon: Icon(Icons.person_outline),
+                suffixIcon: widget.lockName
+                    ? Icon(Icons.lock, color: Colors.grey, size: 18)
+                    : null,
+                filled: widget.lockName,
+                fillColor: widget.lockName
+                    ? Colors.grey[100]
+                    : Colors.transparent,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -165,7 +181,7 @@ class _ContactSheetState extends State<ContactSheet> {
             ),
             SizedBox(height: 14),
 
-            // ── Phone field ──
+            // ── Phone field — always editable ──
             TextField(
               controller: _phoneCtrl,
               keyboardType: TextInputType.phone,
