@@ -7,6 +7,7 @@ class ContactCard extends StatelessWidget {
   final VoidCallback onCall;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final bool isFixed;
 
   const ContactCard({
     super.key,
@@ -14,6 +15,7 @@ class ContactCard extends StatelessWidget {
     required this.onCall,
     required this.onEdit,
     required this.onDelete,
+    this.isFixed = false,
   });
 
   @override
@@ -29,17 +31,53 @@ class ContactCard extends StatelessWidget {
         alignment: Alignment.centerLeft,
       ),
 
-      // ── Swipe LEFT → Delete (red, right side) ──
-      secondaryBackground: _buildSwipeBackground(
-        color: Colors.red,
-        icon: Icons.delete,
-        label: 'Delete',
-        alignment: Alignment.centerRight,
-      ),
+      // ── Swipe LEFT → Delete or blocked ──
+      secondaryBackground: isFixed
+          ? Container(
+              margin: EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.centerRight,
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.lock, color: Colors.grey, size: 22),
+                  SizedBox(height: 4),
+                  Text(
+                    'Locked',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : _buildSwipeBackground(
+              color: Colors.red,
+              icon: Icons.delete,
+              label: 'Delete',
+              alignment: Alignment.centerRight,
+            ),
 
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.endToStart) {
-          // Swiped left → show confirm dialog
+          // ── Fixed contact cannot be deleted ──
+          if (isFixed) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Emergency contact cannot be deleted.'),
+                backgroundColor: Colors.grey,
+              ),
+            );
+            return false;
+          }
+
+          // ── Normal contact → show confirm dialog ──
           final confirm = await showDialog<bool>(
             context: context,
             builder: (ctx) => AlertDialog(
@@ -72,7 +110,6 @@ class ContactCard extends StatelessWidget {
             ),
           );
 
-          // Only delete if user tapped Yes
           if (confirm == true) onDelete();
         } else {
           // Swiped right → Edit
@@ -84,7 +121,14 @@ class ContactCard extends StatelessWidget {
       // ── The actual card ──
       child: Card(
         margin: EdgeInsets.only(bottom: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        color: isFixed ? Colors.white : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: isFixed ? Colors.red : Colors.transparent,
+            width: isFixed ? 2 : 0,
+          ),
+        ),
         child: ListTile(
           leading: CircleAvatar(
             backgroundColor: Color(0xFFE3F2FD),
@@ -107,7 +151,6 @@ class ContactCard extends StatelessWidget {
     );
   }
 
-  // ── Helper: builds the colored background shown while swiping ──
   Widget _buildSwipeBackground({
     required Color color,
     required IconData icon,

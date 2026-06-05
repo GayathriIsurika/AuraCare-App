@@ -70,7 +70,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       reply = 'You are welcome! 😊 Is there anything else I can help you with?';
     } else {
       reply =
-          'I understand you are asking about "${userMessage}". Please consult a medical professional for accurate advice.';
+          'I understand you are asking about "$userMessage". Please consult a medical professional for accurate advice.';
     }
 
     // Add the bot reply to the message list
@@ -128,7 +128,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black.withValues(alpha: 0.15),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -274,7 +274,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -296,7 +296,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, -2),
           ),
