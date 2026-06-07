@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../widgets/fab_menu.dart';
 import '../widgets/bottom_nav_bar.dart';
@@ -22,97 +24,7 @@ class MedicalRecord {
   });
 }
 
-const List<MedicalRecord> allRecords = [
-  //October)
-  MedicalRecord(
-    title: 'Complete Blood Count',
-    subtitle: 'City General Hospital • Dr. Smith',
-    date: 'Oct 24',
-    icon: Icons.water_drop_outlined,
-    iconColor: Color(0xFF4A90D9),
-    iconBg: Color(0xFFDDEEFB),
-    category: 'lab',
-  ),
-  MedicalRecord(
-    title: 'Chest X-Ray',
-    subtitle: 'Radiology Center • Dr. House',
-    date: 'Oct 20',
-    icon: Icons.image_outlined,
-    iconColor: Color(0xFF4A90D9),
-    iconBg: Color(0xFFDDEEFB),
-    category: 'imaging',
-  ),
-  MedicalRecord(
-    title: 'Post-Surgery Discharge Summary',
-    subtitle: 'City General Hospital • Dr. Smith',
-    date: 'Oct 10',
-    icon: Icons.assignment_outlined,
-    iconColor: Color(0xFF4A90D9),
-    iconBg: Color(0xFFDDEEFB),
-    category: 'consultation',
-  ),
-
-  // NOVEMBER
-  MedicalRecord(
-    title: 'Dermatology Follow-up Note',
-    subtitle: 'Skin Care Center • Dr. Lee',
-    date: 'Nov 28',
-    icon: Icons.content_paste_outlined,
-    iconColor: Color(0xFF4A90D9),
-    iconBg: Color(0xFFDDEEFB),
-    category: 'consultation',
-  ),
-  MedicalRecord(
-    title: 'MRI Brain Scan',
-    subtitle: 'Advanced Radiology • Dr. Banner',
-    date: 'Nov 15',
-    icon: Icons.image_search_outlined,
-    iconColor: Color(0xFF4A90D9),
-    iconBg: Color(0xFFDDEEFB),
-    category: 'imaging',
-  ),
-  MedicalRecord(
-    title: 'Annual Flu Vaccine',
-    subtitle: 'City General Pharmacy • Nurse Joy',
-    date: 'Nov 12',
-    icon: Icons.vaccines_outlined,
-    iconColor: Color(0xFF16A085),
-    iconBg: Color(0xFFD5F5EF),
-    category: 'vaccine',
-  ),
-
-  // SEPTEMBER
-  MedicalRecord(
-    title: 'Annual Checkup Report',
-    subtitle: 'City General Hospital',
-    date: 'Sep 02',
-    icon: Icons.description_outlined,
-    iconColor: Color(0xFF27AE60),
-    iconBg: Color(0xFFE3F7EC),
-    category: 'lab',
-  ),
-
-  // AUGUST
-  MedicalRecord(
-    title: 'Tetanus Booster',
-    subtitle: 'Valley Clinic • Dr. Adams',
-    date: 'Aug 05',
-    icon: Icons.vaccines_outlined,
-    iconColor: Color(0xFF16A085),
-    iconBg: Color(0xFFD5F5EF),
-    category: 'vaccine',
-  ),
-
-  MedicalRecord(
-    title: 'Dental Panoramic X-Ray',
-    subtitle: 'Smile Dental Clinic • Dr. Dent',
-    date: 'Aug 30',
-    icon: Icons.image_outlined,
-    iconColor: Color(0xFF4A90D9),
-    iconBg: Color(0xFFDDEEFB),
-    category: 'imaging',
-  ),
-];
+const List<MedicalRecord> allRecords = [];
 
 //Group records by month label
 Map<String, List<MedicalRecord>> groupByMonth(List<MedicalRecord> records) {
@@ -125,22 +37,23 @@ Map<String, List<MedicalRecord>> groupByMonth(List<MedicalRecord> records) {
 }
 
 String _fullMonthLabel(String date) {
-  const map = {
-    'Jan': 'JANUARY 2023',
-    'Feb': 'FEBRUARY 2023',
-    'Mar': 'MARCH 2023',
-    'Apr': 'APRIL 2023',
-    'May': 'MAY 2023',
-    'Jun': 'JUNE 2023',
-    'Jul': 'JULY 2023',
-    'Aug': 'AUGUST 2023',
-    'Sep': 'SEPTEMBER 2023',
-    'Oct': 'OCTOBER 2023',
-    'Nov': 'NOVEMBER 2023',
-    'Dec': 'DECEMBER 2023',
+  const monthNames = {
+    'Jan': 'JANUARY',
+    'Feb': 'FEBRUARY',
+    'Mar': 'MARCH',
+    'Apr': 'APRIL',
+    'May': 'MAY',
+    'Jun': 'JUNE',
+    'Jul': 'JULY',
+    'Aug': 'AUGUST',
+    'Sep': 'SEPTEMBER',
+    'Oct': 'OCTOBER',
+    'Nov': 'NOVEMBER',
+    'Dec': 'DECEMBER',
   };
   final prefix = date.substring(0, 3);
-  return map[prefix] ?? prefix;
+  final year = DateTime.now().year;
+  return '${monthNames[prefix] ?? prefix} $year';
 }
 
 // Main Screen
@@ -155,7 +68,6 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   int _selectedTab = 0;
   String _searchQuery = '';
 
-  // Tab definitions: label + which category to filter (null = All)
   final List<Map<String, dynamic>> _tabs = [
     {'label': 'All', 'filter': null},
     {'label': 'Labs', 'filter': 'lab'},
@@ -164,32 +76,79 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     {'label': 'Consultations', 'filter': 'consultation'},
   ];
 
-  List<MedicalRecord> get _filteredRecords {
-    List<MedicalRecord> records = List.from(allRecords);
+  //Firestore stream
+  Stream<QuerySnapshot<Map<String, dynamic>>>? _recordsStream;
 
-    final filter = _tabs[_selectedTab]['filter'];
-    if (filter != null) {
-      records = records.where((r) => r.category == filter).toList();
+  @override
+  void initState() {
+    super.initState();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      _recordsStream = FirebaseFirestore.instance
+          .collection('medical_records')
+          .where('uid', isEqualTo: uid)
+          .orderBy('createdAt', descending: true)
+          .snapshots();
     }
+  }
 
-    if (_searchQuery.isNotEmpty) {
-      records = records.where((r) {
-        return r.title.toLowerCase().contains(_searchQuery) ||
-            r.subtitle.toLowerCase().contains(_searchQuery);
-      }).toList();
+  //Convert Firestore doc to MedicalRecord
+  MedicalRecord _docToRecord(Map<String, dynamic> data) {
+    final category = data['category'] ?? 'lab';
+    return MedicalRecord(
+      title: data['title'] ?? 'Untitled',
+      subtitle: data['subtitle'] ?? '',
+      date: data['date'] ?? '',
+      category: category,
+      icon: _iconForCategory(category),
+      iconColor: _colorForCategory(category),
+      iconBg: _bgForCategory(category),
+    );
+  }
+
+  IconData _iconForCategory(String category) {
+    switch (category) {
+      case 'imaging':
+        return Icons.image_outlined;
+      case 'vaccine':
+        return Icons.vaccines_outlined;
+      case 'consultation':
+        return Icons.medical_services_outlined;
+      default:
+        return Icons.science_outlined; // lab
     }
+  }
 
-    return records;
+  Color _colorForCategory(String category) {
+    switch (category) {
+      case 'imaging':
+        return const Color(0xFF9B59B6);
+      case 'vaccine':
+        return const Color(0xFF27AE60);
+      case 'consultation':
+        return const Color(0xFFE67E22);
+      default:
+        return const Color(0xFF4A90D9); // lab
+    }
+  }
+
+  Color _bgForCategory(String category) {
+    switch (category) {
+      case 'imaging':
+        return const Color(0xFFF3E5F5);
+      case 'vaccine':
+        return const Color(0xFFE8F5E9);
+      case 'consultation':
+        return const Color(0xFFFFF3E0);
+      default:
+        return const Color(0xFFE3F2FD); // lab
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final grouped = groupByMonth(_filteredRecords);
-
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4F8),
-
-      //App Bar
       appBar: AppBar(
         backgroundColor: const Color(0xFFF0F4F8),
         elevation: 0,
@@ -204,8 +163,6 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         ),
         centerTitle: true,
       ),
-
-      //Body
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
@@ -216,33 +173,69 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
             const SizedBox(height: 16),
             _buildFilterTabs(),
             const SizedBox(height: 12),
-
-            // Show active filter chips
-            const SizedBox(height: 12),
-
-            // Records list
             Expanded(
-              child: grouped.isEmpty
-                  ? _buildEmptyState()
-                  : ListView(
-                      children: [
-                        for (final entry in grouped.entries) ...[
-                          _buildSectionLabel(entry.key),
-                          const SizedBox(height: 8),
-                          ...entry.value.map((r) => _buildRecordCard(r)),
-                          const SizedBox(height: 16),
-                        ],
-                        const SizedBox(height: 80),
+              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: _recordsStream,
+                builder: (context, snapshot) {
+                  // Loading
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  // Error
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+
+                  // No data
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return _buildEmptyState();
+                  }
+
+                  // Convert docs to MedicalRecord list
+                  List<MedicalRecord> records = snapshot.data!.docs
+                      .map((doc) => _docToRecord(doc.data()))
+                      .toList();
+
+                  // Apply tab filter
+                  final filter = _tabs[_selectedTab]['filter'];
+                  if (filter != null) {
+                    records = records
+                        .where((r) => r.category == filter)
+                        .toList();
+                  }
+
+                  // Apply search filter
+                  if (_searchQuery.isNotEmpty) {
+                    records = records.where((r) {
+                      return r.title.toLowerCase().contains(_searchQuery) ||
+                          r.subtitle.toLowerCase().contains(_searchQuery);
+                    }).toList();
+                  }
+
+                  // Still empty after filter
+                  if (records.isEmpty) return _buildEmptyState();
+
+                  // Group by month and show
+                  final grouped = groupByMonth(records);
+                  return ListView(
+                    children: [
+                      for (final entry in grouped.entries) ...[
+                        _buildSectionLabel(entry.key),
+                        const SizedBox(height: 8),
+                        ...entry.value.map((r) => _buildRecordCard(r)),
+                        const SizedBox(height: 16),
                       ],
-                    ),
+                      const SizedBox(height: 80),
+                    ],
+                  );
+                },
+              ),
             ),
           ],
         ),
       ),
-
       floatingActionButton: const UploadFabMenu(),
-
-      //Bottom Nav
       bottomNavigationBar: const BottomNavBar(currentIndex: 1),
     );
   }
