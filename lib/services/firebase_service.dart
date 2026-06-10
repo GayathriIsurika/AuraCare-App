@@ -161,10 +161,9 @@ class FirebaseService {
 
       if (imageUrl != null) {
         // Save URL to Firestore
-        await _firestore
-            .collection('users')
-            .doc(currentUser!.uid)
-            .update({'profileImageUrl': imageUrl});
+        await _firestore.collection('users').doc(currentUser!.uid).update({
+          'profileImageUrl': imageUrl,
+        });
 
         return imageUrl;
       }
@@ -222,5 +221,245 @@ class FirebaseService {
     } catch (e) {
       return null;
     }
+  }
+
+  //MEDICAL RECORDS
+
+  Future<String?> saveMedicalRecord({
+    required File file,
+    required String title,
+    required String subtitle,
+    required String category,
+  }) async {
+    try {
+      if (currentUser == null) return 'User not logged in';
+
+      final uploaded = await _cloudinaryService.uploadMedicalRecord(file);
+      if (uploaded == null) return 'File upload failed';
+
+      await _firestore.collection('medical_records').add({
+        'uid': currentUser!.uid,
+        'title': title,
+        'subtitle': subtitle,
+        'category': category,
+        'cloudinaryUrl': uploaded['url'],
+        'publicId': uploaded['publicId'],
+        'date': _formatDate(DateTime.now()),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>>? getMedicalRecordsStream() {
+    if (currentUser == null) return null;
+    return _firestore
+        .collection('medical_records')
+        .where('uid', isEqualTo: currentUser!.uid)
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+  Future<String?> deleteMedicalRecord(String docId) async {
+    try {
+      await _firestore.collection('medical_records').doc(docId).delete();
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  //private helper
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}';
+  }
+
+  /// Auto-detects category from filename using keyword matching.
+  /// Returns one of: 'lab', 'imaging', 'vaccine', 'consultation'
+  String detectCategory(String filename) {
+    final name = filename
+        .toLowerCase()
+        .replaceAll('_', ' ')
+        .replaceAll('-', ' ');
+
+    // ── Imaging keywords ──────────────────────────────
+    const imagingKeywords = [
+      'xray',
+      'x ray',
+      'mri',
+      'ct scan',
+      'ct',
+      'scan',
+      'ultrasound',
+      'echo',
+      'imaging',
+      'radiology',
+      'mammogram',
+      'pet',
+      'angiogram',
+      'bone',
+      'chest',
+      'abdomen',
+      'spine',
+      'brain',
+      'pelvis',
+      'knee',
+      'shoulder',
+      'wrist',
+      'ankle',
+      'hip',
+      'neck',
+      'cardiac',
+      'thyroid scan',
+      'nuclear',
+    ];
+
+    // ── Vaccine keywords ──────────────────────────────
+    const vaccineKeywords = [
+      'vaccine',
+      'vaccination',
+      'immunization',
+      'immunisation',
+      'booster',
+      'flu',
+      'covid',
+      'hepatitis',
+      'mmr',
+      'polio',
+      'tetanus',
+      'rabies',
+      'typhoid',
+      'yellow fever',
+      'meningitis',
+      'pneumonia',
+      'hpv',
+      'varicella',
+      'dose',
+      'jab',
+      'shot',
+      'inoculation',
+    ];
+
+    // ── Consultation keywords ─────────────────────────
+    const consultationKeywords = [
+      'prescription',
+      'doctor',
+      'consult',
+      'consultation',
+      'referral',
+      'discharge',
+      'summary',
+      'note',
+      'visit',
+      'clinic',
+      'hospital',
+      'appointment',
+      'diagnosis',
+      'treatment',
+      'medicine',
+      'follow',
+      'review',
+      'op',
+      'outpatient',
+      'inpatient',
+      'gp',
+      'specialist',
+      'letter',
+      'certificate',
+      'sick',
+      'medical certificate',
+      'dr ',
+      'doc',
+      'opd',
+      'ipd',
+    ];
+
+    // ── Lab keywords ──────────────────────────────────
+    const labKeywords = [
+      'blood',
+      'urine',
+      'cbc',
+      'test',
+      'lab',
+      'report',
+      'hba1c',
+      'glucose',
+      'lipid',
+      'cholesterol',
+      'panel',
+      'culture',
+      'biopsy',
+      'pathology',
+      'hemoglobin',
+      'platelet',
+      'thyroid',
+      'tsh',
+      'creatinine',
+      'kidney',
+      'liver',
+      'wbc',
+      'rbc',
+      'esr',
+      'crp',
+      'uric',
+      'protein',
+      'calcium',
+      'sodium',
+      'potassium',
+      'stool',
+      'sputum',
+      'swab',
+      'pcr',
+      'antigen',
+      'antibody',
+      'serology',
+      'hormone',
+      'vitamin',
+      'iron',
+      'ferritin',
+      'hiv',
+      'dengue',
+      'malaria',
+      'typhoid test',
+      'widal',
+      'lft',
+      'rft',
+      'kft',
+    ];
+
+    // ── Check in priority order ───────────────────────
+    // Check imaging first (most specific)
+    for (final keyword in imagingKeywords) {
+      if (name.contains(keyword)) return 'imaging';
+    }
+    for (final keyword in vaccineKeywords) {
+      if (name.contains(keyword)) return 'vaccine';
+    }
+    for (final keyword in consultationKeywords) {
+      if (name.contains(keyword)) return 'consultation';
+    }
+    for (final keyword in labKeywords) {
+      if (name.contains(keyword)) return 'lab';
+    }
+
+    return 'lab'; // default
   }
 }
