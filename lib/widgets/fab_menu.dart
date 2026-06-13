@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:auracare_app/services/firebase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -17,6 +19,146 @@ class _UploadFabMenuState extends State<UploadFabMenu>
   late Animation<double> _expandAnimation;
 
   final ImagePicker _picker = ImagePicker();
+  final FirebaseService _firebaseService = FirebaseService();
+
+  Future<void> _uploadAndSave(
+    String filePath, {
+    required String defaultTitle,
+  }) async {
+    // 1. Show dialog first — user types the name
+    final result = await _showUploadDialog(defaultTitle);
+    if (result == null) return; // user cancelled
+
+    // 2. Detect category from FINAL title user typed ← moved here
+    final autoCategory = _firebaseService.detectCategory(result['title']!);
+
+    _showSnack('⏳ Uploading...');
+
+    // 3. Upload with correct category
+    final error = await _firebaseService.saveMedicalRecord(
+      file: File(filePath),
+      title: result['title']!,
+      subtitle: result['title']!,
+      category: autoCategory,
+    );
+
+    if (error != null) {
+      _showSnack('❌ $error');
+    } else {
+      _showSnack('✅ Saved to ${_categoryLabel(autoCategory)}!');
+    }
+  }
+
+  String _categoryLabel(String category) {
+    switch (category) {
+      case 'lab':
+        return 'Labs';
+      case 'imaging':
+        return 'Imaging';
+      case 'vaccine':
+        return 'Vaccines';
+      case 'consultation':
+        return 'Consultations';
+      default:
+        return 'Records';
+    }
+  }
+
+  Future<Map<String, String>?> _showUploadDialog(String defaultTitle) async {
+    final TextEditingController titleController = TextEditingController(
+      text: defaultTitle,
+    );
+
+    return showModalBottomSheet<Map<String, String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              const Text(
+                'Save Record',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Title field only
+              const Text(
+                'Record Name',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black54,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: titleController,
+                decoration: InputDecoration(
+                  hintText: 'e.g. Blood Test Report',
+                  filled: true,
+                  fillColor: const Color(0xFFF0F4F8),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Save button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4A90D9),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () {
+                    final title = titleController.text.trim();
+                    if (title.isEmpty) return;
+                    Navigator.pop(context, {'title': title});
+                  },
+                  child: const Text(
+                    'Upload & Save',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   void initState() {
@@ -64,9 +206,10 @@ class _UploadFabMenuState extends State<UploadFabMenu>
       );
 
       if (scannedImages != null && scannedImages.isNotEmpty) {
-        _showSnack('✅ Scanned ${scannedImages.length} page(s) successfully!');
-      } else {
-        _showSnack('No pages scanned.');
+        await _uploadAndSave(
+          scannedImages.first,
+          defaultTitle: 'Scanned Document',
+        );
       }
     } catch (e) {
       _showSnack('❌ Scan failed: $e');
@@ -83,9 +226,8 @@ class _UploadFabMenuState extends State<UploadFabMenu>
       );
 
       if (image != null) {
-        _showSnack('✅ Image selected: ${image.name}');
-      } else {
-        _showSnack('No image selected.');
+        final defaultTitle = image.name.replaceAll(RegExp(r'\.[^.]+$'), '');
+        await _uploadAndSave(image.path, defaultTitle: defaultTitle);
       }
     } catch (e) {
       _showSnack('❌ Gallery error: $e');
@@ -99,15 +241,27 @@ class _UploadFabMenuState extends State<UploadFabMenu>
       FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+        withData: true, // ← ADD THIS
       );
 
       if (result != null) {
-        final fileName = result.files.single.name;
-        _showSnack('✅ File selected: $fileName');
-      } else {
-        _showSnack('No file selected.');
+        final file = result.files.single;
+
+        print('📄 File name: ${file.name}');
+        print('📄 File path: ${file.path}');
+        print('📄 File size: ${file.size}');
+
+        // path can be null on some devices
+        if (file.path == null) {
+          _showSnack('❌ Could not get file path');
+          return;
+        }
+
+        final defaultTitle = file.name.replaceAll(RegExp(r'\.[^.]+$'), '');
+        await _uploadAndSave(file.path!, defaultTitle: defaultTitle);
       }
     } catch (e) {
+      print('❌ File picker error: $e');
       _showSnack('❌ File picker error: $e');
     }
   }
