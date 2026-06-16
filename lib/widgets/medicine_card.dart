@@ -3,11 +3,12 @@ import '../models/reminder_model.dart';
 
 class MedicineCard extends StatefulWidget {
   final ReminderModel reminder;
+  final ValueChanged<bool> onMarkTaken;
 
   const MedicineCard({
     super.key,
     required this.reminder,
-    required Null Function() onMarkTaken,
+    required this.onMarkTaken,
   });
 
   @override
@@ -20,62 +21,58 @@ class _MedicineCardState extends State<MedicineCard> {
   @override
   void initState() {
     super.initState();
-    isTaken = widget.reminder.isTaken; // ← get initial value
+    isTaken = widget.reminder.isTaken;
+  }
+
+  void _setTaken(bool value) {
+    setState(() {
+      isTaken = value;
+      widget.reminder.isTaken = value;
+    });
+    widget.onMarkTaken(value); // ← persists to Firebase
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: 10),
-      padding: EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         children: [
-          // ── Top row ──
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // ── Left side ──
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Medicine name ──
                   Text(
                     widget.reminder.name,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                   ),
-
-                  SizedBox(height: 4),
-
-                  // ── Dose + instruction ──
+                  const SizedBox(height: 4),
                   Text(
                     "${widget.reminder.dose} • ${widget.reminder.instructions}",
-                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
                   ),
                 ],
               ),
-
-              // ── Right side ──
               isTaken
-                  // ── Green tick (tap to undo) ──
                   ? GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          isTaken = false; // ← undo!
-                          widget.reminder.isTaken = false;
-                        });
-                      },
-                      child: Icon(
+                      onTap: () => _setTaken(false), // undo
+                      child: const Icon(
                         Icons.check_circle,
                         color: Colors.green,
                         size: 24,
                       ),
                     )
-                  // ── Due soon (not taken) ──
-                  : Text(
+                  : const Text(
                       "Due soon",
                       style: TextStyle(
                         color: Colors.orange,
@@ -85,18 +82,11 @@ class _MedicineCardState extends State<MedicineCard> {
                     ),
             ],
           ),
-
-          // ── Mark as Taken button (only if not taken) ──
           if (!isTaken) ...[
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             GestureDetector(
-              onTap: () {
-                setState(() {
-                  isTaken = true; // ← mark taken!
-                  widget.reminder.isTaken = true;
-                });
-              },
-              child: Row(
+              onTap: () => _setTaken(true),
+              child: const Row(
                 children: [
                   Icon(
                     Icons.radio_button_unchecked,

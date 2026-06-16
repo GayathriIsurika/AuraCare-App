@@ -2,9 +2,12 @@ import 'package:auracare_app/constant/app_colors.dart';
 import 'package:auracare_app/models/appointment_model.dart';
 import 'package:auracare_app/models/reminder_model.dart';
 import 'package:auracare_app/models/user_model.dart';
+import 'package:auracare_app/services/firebase_service.dart';
+import 'package:auracare_app/widgets/add_reminder_sheet.dart';
 import 'package:auracare_app/widgets/appointment_card.dart';
 import 'package:auracare_app/widgets/bottom_nav_bar.dart';
 import 'package:auracare_app/widgets/dataPIckerWidget.dart';
+import 'package:auracare_app/widgets/hydration_card.dart';
 import 'package:auracare_app/widgets/medicine_card.dart';
 import 'package:flutter/material.dart';
 
@@ -16,209 +19,447 @@ class ReminderScreen extends StatefulWidget {
 }
 
 class _ReminderScreenState extends State<ReminderScreen> {
-  // user data
-  final UserModel user = UserModel(
-    name: "Smith",
-    profileImageUrl:
-        "https://plus.unsplash.com/premium_photo-1689568126014-06fea9d5d341?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    hasNotifications: true,
-  );
+  final FirebaseService _firebaseService = FirebaseService();
+  bool _isLoading = true;
 
-  // Morning reminders
-  List<ReminderModel> morningReminders = [
-    ReminderModel(
-      name: 'Lisinopril',
-      dose: '10mg',
-      instructions: 'Take with food',
-      time: 'Morning',
-      isTaken: true,
-      isHydration: false,
-    ),
-  ];
+  UserModel? user;
 
-  // Morning appointments
-  List<AppointmentModel> appointments = [
-    AppointmentModel(
-      doctorName: 'Dr. Emily Chen',
-      location: 'City Heart Clinic, Room 302',
-      time: 'Morning',
-      isCheckedIn: false,
-    ),
-  ];
+  List<ReminderModel> morningReminders = [];
+  List<ReminderModel> afternoonReminders = [];
+  List<ReminderModel> eveningReminders = [];
+  List<AppointmentModel> appointments = [];
 
-  // Afternoon reminders
-  List<ReminderModel> afternoonReminders = [
-    ReminderModel(
-      name: 'Vitamin D3',
-      dose: '1 Capsule',
-      instructions: 'After lunch',
-      time: 'Afternoon',
-      isTaken: false,
-      isHydration: false,
-    ),
-  ];
+  bool _hydrationEnabled = false;
+  String? _hydrationId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+    _loadRemindersFromFirebase();
+  }
+
+  Future<void> _loadUserProfile() async {
+    final data = await _firebaseService.getUserProfile();
+    if (data != null && mounted) {
+      setState(() => user = UserModel.fromMap(data));
+    }
+  }
+
+  int _hourOf(String time) {
+    final parts = time.split(':');
+    if (parts.isEmpty) return -1;
+    return int.tryParse(parts[0].trim()) ?? -1;
+  }
+
+  Future<void> _loadRemindersFromFirebase() async {
+    if (_firebaseService.currentUser == null) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sign in to view reminders'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+
+    final reminders = await _firebaseService.getReminders();
+
+    if (mounted) {
+      setState(() {
+        morningReminders.clear();
+        afternoonReminders.clear();
+        eveningReminders.clear();
+        _hydrationEnabled = false;
+        _hydrationId = null;
+
+        for (var reminder in reminders) {
+          final model = ReminderModel.fromMap(reminder);
+
+          if (model.isHydration) {
+            _hydrationEnabled = true;
+            _hydrationId = model.id;
+            continue;
+          }
+
+          final hour = _hourOf(model.time);
+          if (hour >= 0 && hour < 12) {
+            morningReminders.add(model);
+          } else if (hour >= 12 && hour < 17) {
+            afternoonReminders.add(model);
+          } else {
+            eveningReminders.add(model);
+          }
+        }
+
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _updateReminderStatus(String reminderId, bool isTaken) async {
+    final error = await _firebaseService.updateReminderStatus(
+      reminderId: reminderId,
+      isTaken: isTaken,
+    );
+    if (error != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Error: $error'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteReminder(String reminderId) async {
+    final error = await _firebaseService.deleteReminder(reminderId);
+
+    if (mounted) {
+      if (error == null) {
+        setState(() {
+          morningReminders.removeWhere((r) => r.id == reminderId);
+          afternoonReminders.removeWhere((r) => r.id == reminderId);
+          eveningReminders.removeWhere((r) => r.id == reminderId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🗑️ Reminder deleted'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: $error'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  void _editReminder(ReminderModel reminder) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('✏️ Edit: ${reminder.name}'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _openAddReminder() async {
+    final added = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => const AddReminderSheet(),
+    );
+
+    if (added == true) {
+      await _loadRemindersFromFirebase();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Reminder added'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _toggleHydration(bool enable) async {
+    if (enable) {
+      final error = await _firebaseService.saveReminder(
+        name: 'Drink Water',
+        dose: '1 glass',
+        instructions: 'Stay hydrated',
+        time: 'all-day',
+        isHydration: true,
+      );
+      if (error != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    } else {
+      if (_hydrationId != null) {
+        await _firebaseService.deleteReminder(_hydrationId!);
+      }
+    }
+    await _loadRemindersFromFirebase();
+  }
+
+  Future<void> _refresh() async {
+    await _loadUserProfile();
+    await _loadRemindersFromFirebase();
+  }
+
+  Widget _buildReminderTile(ReminderModel reminder) {
+    return Dismissible(
+      key: ValueKey(reminder.id),
+      direction: DismissDirection.horizontal, // ✅ Both directions
+      // ── Swipe RIGHT (Edit) - Blue ──
+      background: Container(
+        alignment: Alignment.centerLeft,
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.only(left: 24),
+        decoration: BoxDecoration(
+          color: Colors.blue,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(Icons.edit, color: Colors.white, size: 26),
+      ),
+
+      // ── Swipe LEFT (Delete) - Red ──
+      secondaryBackground: Container(
+        alignment: Alignment.centerRight,
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.only(right: 24),
+        decoration: BoxDecoration(
+          color: Colors.red,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(Icons.delete, color: Colors.white, size: 26),
+      ),
+
+      confirmDismiss: (direction) async {
+        // ── Swipe RIGHT → Edit ──
+        if (direction == DismissDirection.startToEnd) {
+          _editReminder(reminder);
+          return false; // Don't dismiss
+        }
+
+        // ── Swipe LEFT → Delete ──
+        if (direction == DismissDirection.endToStart) {
+          return await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Delete reminder?'),
+              content: Text('Remove "${reminder.name}" from your reminders?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Delete'),
+                ),
+              ],
+            ),
+          );
+        }
+        return false;
+      },
+
+      onDismissed: (direction) {
+        if (direction == DismissDirection.endToStart) {
+          _deleteReminder(reminder.id);
+        }
+      },
+
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: MedicineCard(
+          reminder: reminder,
+          onMarkTaken: (taken) => _updateReminderStatus(reminder.id, taken),
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: textGrey,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final bool noReminders =
+        morningReminders.isEmpty &&
+        afternoonReminders.isEmpty &&
+        eveningReminders.isEmpty;
+
     return Scaffold(
       backgroundColor: background,
+
+      // ── FAB: bottom-right corner, ABOVE the nav bar ──
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openAddReminder,
+        backgroundColor: buttonStart,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+
+      // ── Nav bar in the proper Scaffold slot ──
+      bottomNavigationBar: const BottomNavBar(currentIndex: 2),
+
       body: SafeArea(
         child: Column(
           children: [
-            // Header (fixed - not scrolling)
+            // ── Header ──
             Padding(
               padding: const EdgeInsets.all(15.0),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Hello, ${user.name}",
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: textBlue,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        "Your health schedule for today",
-                        style: TextStyle(fontSize: 16, color: textGrey),
-                      ),
-                    ],
-                  ),
-                  Stack(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(0xFF2D9CDB),
-                            width: 4,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          (user?.firstName.isNotEmpty ?? false)
+                              ? "Hello, ${user!.firstName}"
+                              : "Hello",
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: textBlue,
                           ),
                         ),
-                        child: CircleAvatar(
-                          radius: 30,
-                          backgroundImage: NetworkImage(user.profileImageUrl),
-                          backgroundColor: Colors.white,
+                        const SizedBox(height: 5),
+                        const Text(
+                          "Your health schedule for today",
+                          style: TextStyle(fontSize: 16, color: textGrey),
                         ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF2D9CDB),
+                        width: 4,
                       ),
-                    ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white,
+                      backgroundImage:
+                          (user?.profileImageUrl.isNotEmpty ?? false)
+                          ? NetworkImage(user!.profileImageUrl)
+                          : null,
+                      child: (user?.profileImageUrl.isEmpty ?? true)
+                          ? const Icon(
+                              Icons.person,
+                              size: 30,
+                              color: Color(0xFF2D9CDB),
+                            )
+                          : null,
+                    ),
                   ),
                 ],
               ),
             ),
 
             const SizedBox(height: 10),
-
-            // Date Picker (fixed)
             const DatePickerWidget(),
-
             const SizedBox(height: 20),
 
-            // Scrollable Content: All reminders + appointments
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Morning Section ──
-                    if (morningReminders.isNotEmpty) ...[
-                      Text(
-                        "Morning",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: textGrey,
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : RefreshIndicator(
+                      onRefresh: _refresh,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // ── Drink Water Card ──
+                            HydrationCard(
+                              enabled: _hydrationEnabled,
+                              onToggle: _toggleHydration,
+                            ),
+
+                            // ── Morning ──
+                            if (morningReminders.isNotEmpty) ...[
+                              _sectionTitle("Morning"),
+                              ...morningReminders.map(_buildReminderTile),
+
+                              if (appointments.isNotEmpty) ...[
+                                _sectionTitle("Appointments"),
+                                ...appointments.map(
+                                  (appointment) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    child: AppointmentCard(
+                                      appointment: appointment,
+                                      onCheckIn: () {
+                                        setState(() {
+                                          appointment.isCheckedIn =
+                                              !appointment.isCheckedIn;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 20),
+                            ],
+
+                            // ── Afternoon ──
+                            if (afternoonReminders.isNotEmpty) ...[
+                              _sectionTitle("Afternoon"),
+                              ...afternoonReminders.map(_buildReminderTile),
+                              const SizedBox(height: 20),
+                            ],
+
+                            // ── Evening ──
+                            if (eveningReminders.isNotEmpty) ...[
+                              _sectionTitle("Evening"),
+                              ...eveningReminders.map(_buildReminderTile),
+                              const SizedBox(height: 20),
+                            ],
+
+                            if (noReminders)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 40),
+                                child: Center(
+                                  child: Text(
+                                    'No reminders yet — tap + to add one',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                            // extra space so the FAB never covers the last card
+                            const SizedBox(height: 80),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 12),
-
-                      // Morning Medicine Card(s)
-                      ...morningReminders.map(
-                        (reminder) => Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: MedicineCard(
-                            reminder: reminder,
-                            onMarkTaken: () {
-                              setState(() {
-                                reminder.isTaken = !reminder.isTaken;
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-
-                      if (appointments.isNotEmpty) ...[
-                        Text(
-                          "Appointments",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: textGrey,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Appointment Card(s)
-                        ...appointments.map(
-                          (appointment) => Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: AppointmentCard(
-                              appointment: appointment,
-                              onCheckIn: () {
-                                setState(() {
-                                  appointment.isCheckedIn =
-                                      !appointment.isCheckedIn;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-
-                      const SizedBox(height: 30),
-
-                      // ── Afternoon Section ──
-                      if (afternoonReminders.isNotEmpty) ...[
-                        Text(
-                          "Afternoon",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: textGrey,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Afternoon Medicine Card(s)
-                        ...afternoonReminders.map(
-                          (reminder) => Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: MedicineCard(
-                              reminder: reminder,
-                              onMarkTaken: () {
-                                setState(() {
-                                  reminder.isTaken = !reminder.isTaken;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-
-                      // Add more sections (Evening, Night, etc.) the same way later
-                      const SizedBox(height: 40), // extra space at bottom
-                    ],
-                  ],
-                ),
-              ),
+                    ),
             ),
-            BottomNavBar(currentIndex: 2),
           ],
         ),
       ),

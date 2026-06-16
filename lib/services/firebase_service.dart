@@ -148,6 +148,20 @@ class FirebaseService {
     }
   }
 
+  // ── Update only the user's name ──
+  Future<String?> updateUserName(String fullName) async {
+    try {
+      if (currentUser == null) return 'User not logged in';
+      await _firestore.collection('users').doc(currentUser!.uid).update({
+        'fullName': fullName,
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
   // ── Upload profile image using Cloudinary ──
   Future<String?> uploadProfileImage(File imageFile) async {
     try {
@@ -461,5 +475,102 @@ class FirebaseService {
     }
 
     return 'lab'; // default
+  }
+
+  // ── REMINDER METHODS ──
+
+  Future<String?> saveReminder({
+    required String name,
+    required String dose,
+    required String instructions,
+    required String time,
+    bool isTaken = false,
+    bool isHydration = false,
+    String? reminderId,
+  }) async {
+    try {
+      if (currentUser == null) return 'User not logged in';
+
+      final docId =
+          reminderId ?? DateTime.now().millisecondsSinceEpoch.toString();
+
+      await _firestore
+          .collection('users')
+          .doc(currentUser!.uid)
+          .collection('reminders')
+          .doc(docId)
+          .set({
+            'id': docId,
+            'name': name,
+            'dose': dose,
+            'instructions': instructions,
+            'time': time,
+            'isTaken': isTaken,
+            'isHydration': isHydration,
+            'createdAt': DateTime.now().toIso8601String(),
+          });
+
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getReminders() async {
+    try {
+      if (currentUser == null) return [];
+
+      QuerySnapshot snapshot = await _firestore
+          .collection('users')
+          .doc(currentUser!.uid)
+          .collection('reminders')
+          .get();
+
+      return snapshot.docs
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<String?> updateReminderStatus({
+    required String reminderId,
+    required bool isTaken,
+  }) async {
+    try {
+      if (currentUser == null) return 'User not logged in';
+
+      await _firestore
+          .collection('users')
+          .doc(currentUser!.uid)
+          .collection('reminders')
+          .doc(reminderId)
+          .update({
+            'isTaken': isTaken,
+            'lastTakenAt': isTaken ? DateTime.now().toIso8601String() : null,
+          });
+
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  Future<String?> deleteReminder(String reminderId) async {
+    try {
+      if (currentUser == null) return 'User not logged in';
+
+      await _firestore
+          .collection('users')
+          .doc(currentUser!.uid)
+          .collection('reminders')
+          .doc(reminderId)
+          .delete();
+
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
   }
 }
