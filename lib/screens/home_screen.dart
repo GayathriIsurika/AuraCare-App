@@ -1,7 +1,9 @@
+import 'package:auracare_app/widgets/home_upcoming_reminder_card.dart';
 import 'package:flutter/material.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'package:auracare_app/services/firebase_service.dart';
 import 'package:auracare_app/constant/app_colors.dart';
+import 'package:auracare_app/models/reminder_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,10 +20,22 @@ class _HomeScreenState extends State<HomeScreen> {
   String _profileImageUrl = '';
   bool _isLoading = true;
 
+  // ── Stores upcoming reminders (carousel) ──
+  List<ReminderModel> _upcomingReminders = [];
+  final PageController _pageController = PageController(viewportFraction: 0.92);
+  int _currentPage = 0;
+
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadUpcomingReminders();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   // ── Load user name from Firebase ──
@@ -50,6 +64,26 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // ── Load upcoming reminder from Firebase ──
+  Future<void> _loadUpcomingReminders() async {
+    if (_firebaseService.currentUser == null) return;
+
+    final reminders = await _firebaseService.getReminders();
+    if (!mounted) return;
+
+    final list =
+        reminders
+            .map((m) => ReminderModel.fromMap(m))
+            .where((r) => !r.isHydration && !r.isTaken)
+            .toList()
+          ..sort((a, b) => a.time.compareTo(b.time)); // "HH:mm" sorts correctly
+
+    setState(() {
+      _upcomingReminders = list;
+      if (_currentPage >= list.length) _currentPage = 0;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,7 +99,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   children: [
                     const SizedBox(height: 10),
-                    _buildMedicationCard(),
+
+                    // ── Upcoming Reminder Card ──
+                    HomeUpcomingCard(
+                      reminder: _upcomingReminders.isEmpty
+                          ? null
+                          : _upcomingReminders[0],
+                      onTap: () {
+                        Navigator.pushNamed(context, '/reminder').then((_) {
+                          // Reload when coming back from reminder screen
+                          _loadUpcomingReminders();
+                        });
+                      },
+                    ),
+
                     const SizedBox(height: 24),
                     _buildActionGrid(context),
                     const SizedBox(height: 24),
@@ -122,85 +169,35 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: Colors.white.withValues(alpha: 0.3),
-                // ← Shows profile image if available, else initials
-                backgroundImage: _profileImageUrl.isNotEmpty
-                    ? NetworkImage(_profileImageUrl)
-                    : null,
-                child: _isLoading
-                    ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-                    : _profileImageUrl.isEmpty
-                    ? Text(
-                  _userInitials,         // ← shows initials if no image
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                )
-                    : null,
-              ),
+            CircleAvatar(
+              radius: 30,
+              backgroundColor: Colors.white.withValues(alpha: 0.3),
+              // ← Shows profile image if available, else initials
+              backgroundImage: _profileImageUrl.isNotEmpty
+                  ? NetworkImage(_profileImageUrl)
+                  : null,
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : _profileImageUrl.isEmpty
+                  ? Text(
+                      _userInitials, // ← shows initials if no image
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    )
+                  : null,
+            ),
           ],
         ),
-      ),
-    );
-  }
-
-  // ── MEDICATION CARD ──
-  Widget _buildMedicationCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.withValues(alpha: 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8F6FB),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.medication_rounded,
-              color: Color(0xFF5BB8D4),
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Upcoming: Metformin',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Take 500mg at 2:00 PM today',
-                style: TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -245,7 +242,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () {
         if (item.label == 'Reminder') {
-          Navigator.pushNamed(context, '/reminder');
+          Navigator.pushNamed(context, '/reminder').then((_) {
+            _loadUpcomingReminders(); // Reload when back
+          });
         } else if (item.label == 'Upload Report') {
           Navigator.pushNamed(context, '/upload');
         } else if (item.label == 'Nearby Hospital') {
