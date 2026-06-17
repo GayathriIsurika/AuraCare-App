@@ -144,13 +144,28 @@ class _ReminderScreenState extends State<ReminderScreen> {
     }
   }
 
-  void _editReminder(ReminderModel reminder) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('✏️ Edit: ${reminder.name}'),
-        duration: const Duration(seconds: 2),
+  Future<void> _editReminder(ReminderModel reminder) async {
+    final updated = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      builder: (_) => AddReminderSheet(reminder: reminder),
     );
+
+    if (updated == true) {
+      await _loadRemindersFromFirebase();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Reminder updated'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _openAddReminder() async {
@@ -211,7 +226,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
   Widget _buildReminderTile(ReminderModel reminder) {
     return Dismissible(
       key: ValueKey(reminder.id),
-      direction: DismissDirection.horizontal, // ✅ Both directions
+      direction: DismissDirection.horizontal, //
       // ── Swipe RIGHT (Edit) - Blue ──
       background: Container(
         alignment: Alignment.centerLeft,
@@ -239,7 +254,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
       confirmDismiss: (direction) async {
         // ── Swipe RIGHT → Edit ──
         if (direction == DismissDirection.startToEnd) {
-          _editReminder(reminder);
+          await _editReminder(reminder);
           return false; // Don't dismiss
         }
 
@@ -311,7 +326,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton(
         onPressed: _openAddReminder,
-        backgroundColor: buttonStart,
+        backgroundColor: Colors.blue,
         child: const Icon(Icons.add, color: Colors.white),
       ),
 
@@ -352,13 +367,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
                   ),
                   const SizedBox(width: 10),
                   Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFF2D9CDB),
-                        width: 4,
-                      ),
-                    ),
+                    decoration: BoxDecoration(shape: BoxShape.circle),
                     child: CircleAvatar(
                       radius: 30,
                       backgroundColor: Colors.white,

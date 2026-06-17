@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:auracare_app/constant/app_colors.dart';
+import 'package:auracare_app/models/reminder_model.dart';
 import 'package:auracare_app/services/firebase_service.dart';
 
 class AddReminderSheet extends StatefulWidget {
-  const AddReminderSheet({super.key});
+  final ReminderModel? reminder; // null = add, non-null = edit
+  const AddReminderSheet({super.key, this.reminder});
 
   @override
   State<AddReminderSheet> createState() => _AddReminderSheetState();
@@ -12,12 +14,36 @@ class AddReminderSheet extends StatefulWidget {
 class _AddReminderSheetState extends State<AddReminderSheet> {
   final FirebaseService _firebaseService = FirebaseService();
 
-  final _nameController = TextEditingController();
-  final _doseController = TextEditingController();
-  final _instructionsController = TextEditingController();
+  late final TextEditingController _nameController;
+  late final TextEditingController _doseController;
+  late final TextEditingController _instructionsController;
 
   TimeOfDay? _selectedTime;
   bool _isSaving = false;
+
+  bool get _isEditing => widget.reminder != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final r = widget.reminder;
+    _nameController = TextEditingController(text: r?.name ?? '');
+    _doseController = TextEditingController(text: r?.dose ?? '');
+    _instructionsController = TextEditingController(
+      text: r?.instructions ?? '',
+    );
+    _selectedTime = _parseTime(r?.time);
+  }
+
+  TimeOfDay? _parseTime(String? time) {
+    if (time == null) return null;
+    final parts = time.split(':');
+    if (parts.length < 2) return null;
+    final h = int.tryParse(parts[0].trim());
+    final m = int.tryParse(parts[1].trim());
+    if (h == null || m == null) return null;
+    return TimeOfDay(hour: h, minute: m);
+  }
 
   @override
   void dispose() {
@@ -58,6 +84,8 @@ class _AddReminderSheetState extends State<AddReminderSheet> {
       dose: _doseController.text.trim(),
       instructions: _instructionsController.text.trim(),
       time: _formatTime(_selectedTime!),
+      reminderId: widget.reminder?.id, // reuse id → updates instead of creating
+      isTaken: widget.reminder?.isTaken ?? false,
     );
 
     if (!mounted) return;
@@ -100,9 +128,9 @@ class _AddReminderSheetState extends State<AddReminderSheet> {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            "Add Reminder",
-            style: TextStyle(
+          Text(
+            _isEditing ? "Edit Reminder" : "Add Reminder",
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: textBlue,
@@ -167,9 +195,9 @@ class _AddReminderSheetState extends State<AddReminderSheet> {
               ),
               child: _isSaving
                   ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text(
-                      "Save Reminder",
-                      style: TextStyle(
+                  : Text(
+                      _isEditing ? "Update Reminder" : "Save Reminder",
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
