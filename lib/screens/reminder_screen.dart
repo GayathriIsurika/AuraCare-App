@@ -1,5 +1,4 @@
 import 'package:auracare_app/constant/app_colors.dart';
-import 'package:auracare_app/models/appointment_model.dart';
 import 'package:auracare_app/models/reminder_model.dart';
 import 'package:auracare_app/models/user_model.dart';
 import 'package:auracare_app/services/firebase_service.dart';
@@ -10,6 +9,13 @@ import 'package:auracare_app/widgets/dataPIckerWidget.dart';
 import 'package:auracare_app/widgets/hydration_card.dart';
 import 'package:auracare_app/widgets/medicine_card.dart';
 import 'package:flutter/material.dart';
+
+/// One dose = a reminder + one of its scheduled times, on the selected day.
+class _DoseEntry {
+  final ReminderModel reminder;
+  final String time;
+  _DoseEntry(this.reminder, this.time);
+}
 
 class ReminderScreen extends StatefulWidget {
   const ReminderScreen({super.key});
@@ -24,10 +30,10 @@ class _ReminderScreenState extends State<ReminderScreen> {
 
   UserModel? user;
 
-  List<ReminderModel> morningReminders = [];
-  List<ReminderModel> afternoonReminders = [];
-  List<ReminderModel> eveningReminders = [];
-  List<AppointmentModel> appointments = [];
+  /// Every reminder for this user (filtered per-day in the build).
+  List<ReminderModel> _allReminders = [];
+
+  DateTime _selectedDate = DateTime.now();
 
   bool _hydrationEnabled = false;
   String? _hydrationId;
@@ -70,29 +76,19 @@ class _ReminderScreenState extends State<ReminderScreen> {
 
     if (mounted) {
       setState(() {
-        morningReminders.clear();
-        afternoonReminders.clear();
-        eveningReminders.clear();
+        _allReminders = [];
         _hydrationEnabled = false;
         _hydrationId = null;
 
-        for (var reminder in reminders) {
-          final model = ReminderModel.fromMap(reminder);
+        for (var raw in reminders) {
+          final model = ReminderModel.fromMap(raw);
 
-          if (model.isHydration) {
+          if (model.isHydration || model.type == 'hydration') {
             _hydrationEnabled = true;
             _hydrationId = model.id;
             continue;
           }
-
-          final hour = _hourOf(model.time);
-          if (hour >= 0 && hour < 12) {
-            morningReminders.add(model);
-          } else if (hour >= 12 && hour < 17) {
-            afternoonReminders.add(model);
-          } else {
-            eveningReminders.add(model);
-          }
+          _allReminders.add(model);
         }
 
         _isLoading = false;
@@ -100,12 +96,55 @@ class _ReminderScreenState extends State<ReminderScreen> {
     }
   }
 
-  Future<void> _updateReminderStatus(String reminderId, bool isTaken) async {
-    final error = await _firebaseService.updateReminderStatus(
-      reminderId: reminderId,
-      isTaken: isTaken,
+  void _onDateSelected(DateTime date) {
+    setState(() => _selectedDate = DateTime(date.year, date.month, date.day));
+  }
+
+  /// Expand active reminders into dose rows, then bucket by time of day.
+  Map<String, List<_DoseEntry>> _groupedForSelectedDay() {
+    final morning = <_DoseEntry>[];
+    final afternoon = <_DoseEntry>[];
+    final evening = <_DoseEntry>[];
+
+    for (final r in _allReminders) {
+      if (!r.isActiveOn(_selectedDate)) continue;
+
+      // A reminder with no times still shows once (e.g. a note); use ''.
+      final times = r.times.isEmpty ? [''] : r.times;
+      for (final t in times) {
+        final entry = _DoseEntry(r, t);
+        final h = _hourOf(t);
+        if (h >= 12 && h < 17) {
+          afternoon.add(entry);
+        } else if (h >= 17) {
+          evening.add(entry);
+        } else {
+          morning.add(entry); // h < 12, or no/invalid time
+        }
+      }
+    }
+
+    int byTime(_DoseEntry a, _DoseEntry b) => a.time.compareTo(b.time);
+    morning.sort(byTime);
+    afternoon.sort(byTime);
+    evening.sort(byTime);
+
+    return {'Morning': morning, 'Afternoon': afternoon, 'Evening': evening};
+  }
+
+  Future<void> _setDose(ReminderModel r, String time, bool taken) async {
+    final key = '${ReminderModel.dateKeyOf(_selectedDate)}_$time';
+    setState(() => r.doseLog[key] = taken); // optimistic
+
+    final error = await _firebaseService.setDoseTaken(
+      reminderId: r.id,
+      day: _selectedDate,
+      time: time,
+      taken: taken,
     );
+
     if (error != null && mounted) {
+      setState(() => r.doseLog[key] = !taken); // revert on failure
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('❌ Error: $error'),
@@ -121,11 +160,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
 
     if (mounted) {
       if (error == null) {
-        setState(() {
-          morningReminders.removeWhere((r) => r.id == reminderId);
-          afternoonReminders.removeWhere((r) => r.id == reminderId);
-          eveningReminders.removeWhere((r) => r.id == reminderId);
-        });
+        setState(() => _allReminders.removeWhere((r) => r.id == reminderId));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('🗑️ Reminder deleted'),
@@ -198,7 +233,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
         name: 'Drink Water',
         dose: '1 glass',
         instructions: 'Stay hydrated',
-        time: 'all-day',
+        type: 'hydration',
         isHydration: true,
       );
       if (error != null && mounted) {
@@ -223,11 +258,30 @@ class _ReminderScreenState extends State<ReminderScreen> {
     await _loadRemindersFromFirebase();
   }
 
-  Widget _buildReminderTile(ReminderModel reminder) {
+  Widget _buildDoseTile(_DoseEntry entry) {
+    final r = entry.reminder;
+    final taken = r.isDoseTaken(_selectedDate, entry.time);
+
+    final child = (r.type == 'appointment')
+        ? AppointmentCard(
+            reminder: r,
+            isCheckedIn: taken,
+            onCheckIn: (v) => _setDose(r, entry.time, v),
+            onReschedule: () => _editReminder(r),
+          )
+        : MedicineCard(
+            reminder: r,
+            time: entry.time,
+            isTaken: taken,
+            onMarkTaken: (v) => _setDose(r, entry.time, v),
+          );
+
     return Dismissible(
-      key: ValueKey(reminder.id),
-      direction: DismissDirection.horizontal, //
-      // ── Swipe RIGHT (Edit) - Blue ──
+      // Date is part of the key so each day shows its OWN status, not a cached one.
+      key: ValueKey(
+        '${r.id}_${entry.time}_${ReminderModel.dateKeyOf(_selectedDate)}',
+      ),
+      direction: DismissDirection.horizontal,
       background: Container(
         alignment: Alignment.centerLeft,
         margin: const EdgeInsets.only(bottom: 16),
@@ -238,8 +292,6 @@ class _ReminderScreenState extends State<ReminderScreen> {
         ),
         child: const Icon(Icons.edit, color: Colors.white, size: 26),
       ),
-
-      // ── Swipe LEFT (Delete) - Red ──
       secondaryBackground: Container(
         alignment: Alignment.centerRight,
         margin: const EdgeInsets.only(bottom: 16),
@@ -250,21 +302,17 @@ class _ReminderScreenState extends State<ReminderScreen> {
         ),
         child: const Icon(Icons.delete, color: Colors.white, size: 26),
       ),
-
       confirmDismiss: (direction) async {
-        // ── Swipe RIGHT → Edit ──
         if (direction == DismissDirection.startToEnd) {
-          await _editReminder(reminder);
-          return false; // Don't dismiss
+          await _editReminder(r);
+          return false;
         }
-
-        // ── Swipe LEFT → Delete ──
         if (direction == DismissDirection.endToStart) {
           return await showDialog<bool>(
             context: context,
             builder: (ctx) => AlertDialog(
               title: const Text('Delete reminder?'),
-              content: Text('Remove "${reminder.name}" from your reminders?'),
+              content: Text('Remove "${r.name}" from your reminders?'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
@@ -281,20 +329,12 @@ class _ReminderScreenState extends State<ReminderScreen> {
         }
         return false;
       },
-
       onDismissed: (direction) {
         if (direction == DismissDirection.endToStart) {
-          _deleteReminder(reminder.id);
+          _deleteReminder(r.id);
         }
       },
-
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: MedicineCard(
-          reminder: reminder,
-          onMarkTaken: (taken) => _updateReminderStatus(reminder.id, taken),
-        ),
-      ),
+      child: Padding(padding: const EdgeInsets.only(bottom: 16), child: child),
     );
   }
 
@@ -314,25 +354,22 @@ class _ReminderScreenState extends State<ReminderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final groups = _groupedForSelectedDay();
+    final morning = groups['Morning']!;
+    final afternoon = groups['Afternoon']!;
+    final evening = groups['Evening']!;
     final bool noReminders =
-        morningReminders.isEmpty &&
-        afternoonReminders.isEmpty &&
-        eveningReminders.isEmpty;
+        morning.isEmpty && afternoon.isEmpty && evening.isEmpty;
 
     return Scaffold(
       backgroundColor: background,
-
-      // ── FAB: bottom-right corner, ABOVE the nav bar ──
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton(
         onPressed: _openAddReminder,
         backgroundColor: Colors.blue,
         child: const Icon(Icons.add, color: Colors.white),
       ),
-
-      // ── Nav bar in the proper Scaffold slot ──
       bottomNavigationBar: const BottomNavBar(currentIndex: 2),
-
       body: SafeArea(
         child: Column(
           children: [
@@ -366,30 +403,26 @@ class _ReminderScreenState extends State<ReminderScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Container(
-                    decoration: BoxDecoration(shape: BoxShape.circle),
-                    child: CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.white,
-                      backgroundImage:
-                          (user?.profileImageUrl.isNotEmpty ?? false)
-                          ? NetworkImage(user!.profileImageUrl)
-                          : null,
-                      child: (user?.profileImageUrl.isEmpty ?? true)
-                          ? const Icon(
-                              Icons.person,
-                              size: 30,
-                              color: Color(0xFF2D9CDB),
-                            )
-                          : null,
-                    ),
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.white,
+                    backgroundImage: (user?.profileImageUrl.isNotEmpty ?? false)
+                        ? NetworkImage(user!.profileImageUrl)
+                        : null,
+                    child: (user?.profileImageUrl.isEmpty ?? true)
+                        ? const Icon(
+                            Icons.person,
+                            size: 30,
+                            color: Color(0xFF2D9CDB),
+                          )
+                        : null,
                   ),
                 ],
               ),
             ),
 
             const SizedBox(height: 10),
-            const DatePickerWidget(),
+            DatePickerWidget(onDateSelected: _onDateSelected),
             const SizedBox(height: 20),
 
             Expanded(
@@ -403,48 +436,24 @@ class _ReminderScreenState extends State<ReminderScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // ── Drink Water Card ──
                             HydrationCard(
                               enabled: _hydrationEnabled,
                               onToggle: _toggleHydration,
                             ),
 
-                            // ── Morning ──
-                            if (morningReminders.isNotEmpty) ...[
+                            if (morning.isNotEmpty) ...[
                               _sectionTitle("Morning"),
-                              ...morningReminders.map(_buildReminderTile),
-
-                              if (appointments.isNotEmpty) ...[
-                                _sectionTitle("Appointments"),
-                                ...appointments.map(
-                                  (appointment) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 16),
-                                    child: AppointmentCard(
-                                      appointment: appointment,
-                                      onCheckIn: () {
-                                        setState(() {
-                                          appointment.isCheckedIn =
-                                              !appointment.isCheckedIn;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ],
+                              ...morning.map(_buildDoseTile),
                               const SizedBox(height: 20),
                             ],
-
-                            // ── Afternoon ──
-                            if (afternoonReminders.isNotEmpty) ...[
+                            if (afternoon.isNotEmpty) ...[
                               _sectionTitle("Afternoon"),
-                              ...afternoonReminders.map(_buildReminderTile),
+                              ...afternoon.map(_buildDoseTile),
                               const SizedBox(height: 20),
                             ],
-
-                            // ── Evening ──
-                            if (eveningReminders.isNotEmpty) ...[
+                            if (evening.isNotEmpty) ...[
                               _sectionTitle("Evening"),
-                              ...eveningReminders.map(_buildReminderTile),
+                              ...evening.map(_buildDoseTile),
                               const SizedBox(height: 20),
                             ],
 
@@ -453,7 +462,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
                                 padding: EdgeInsets.symmetric(vertical: 40),
                                 child: Center(
                                   child: Text(
-                                    'No reminders yet — tap + to add one',
+                                    'Nothing for this day — tap + to add',
                                     style: TextStyle(
                                       color: Colors.grey,
                                       fontSize: 16,
@@ -462,7 +471,6 @@ class _ReminderScreenState extends State<ReminderScreen> {
                                 ),
                               ),
 
-                            // extra space so the FAB never covers the last card
                             const SizedBox(height: 80),
                           ],
                         ),

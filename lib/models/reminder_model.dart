@@ -1,70 +1,137 @@
 class ReminderModel {
   final String id;
+  final String type;
   final String name;
   final String dose;
   final String instructions;
-  final String time;
-  bool isTaken;
+
+  // ── Course (medicine / custom) ──
+  final List<String> times;
+  final DateTime? startDate;
+  final DateTime? endDate;
+  final String repeat;
+
+  // ── Appointment-only ──
+  final String doctorName;
+  final String location;
+
   final bool isHydration;
-  DateTime? snoozedUntil;
+
+  // ── Per-dose completion: { '2026-06-18_08:00': true } ──
+  final Map<String, bool> doseLog;
 
   ReminderModel({
     required this.id,
+    required this.type,
     required this.name,
     required this.dose,
     required this.instructions,
-    required this.time,
-    required this.isTaken,
+    required this.times,
+    required this.startDate,
+    required this.endDate,
+    required this.repeat,
+    required this.doctorName,
+    required this.location,
     required this.isHydration,
-    this.snoozedUntil,
+    required this.doseLog,
   });
 
-  /// Build a ReminderModel from a Firestore document map.
   factory ReminderModel.fromMap(Map<String, dynamic> map) {
     return ReminderModel(
       id: map['id'] ?? '',
+      type:
+          map['type'] ??
+          (map['isHydration'] == true ? 'hydration' : 'medicine'),
       name: map['name'] ?? '',
       dose: map['dose'] ?? '',
       instructions: map['instructions'] ?? '',
-      time: map['time'] ?? '',
-      isTaken: map['isTaken'] ?? false,
+      times: _readTimes(map),
+      startDate: _readDate(map['startDate']),
+      endDate: _readDate(map['endDate']),
+      repeat: map['repeat'] ?? 'daily',
+      doctorName: map['doctorName'] ?? '',
+      location: map['location'] ?? '',
       isHydration: map['isHydration'] ?? false,
-      snoozedUntil: map['snoozedUntil'] != null
-          ? DateTime.parse(map['snoozedUntil'])
-          : null,
+      doseLog: Map<String, bool>.from(map['doseLog'] ?? {}),
     );
   }
 
-  /// Convert back to a map for saving to Firestore.
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'type': type,
       'name': name,
       'dose': dose,
       'instructions': instructions,
-      'time': time,
-      'isTaken': isTaken,
+      'times': times,
+      'startDate': _dateKey(startDate),
+      'endDate': _dateKey(endDate),
+      'repeat': repeat,
+      'doctorName': doctorName,
+      'location': location,
       'isHydration': isHydration,
-      'snoozedUntil': snoozedUntil?.toIso8601String(),
+      'doseLog': doseLog,
     };
   }
 
-  bool get isOverdue {
-    if (isTaken) return false;
-    if (snoozedUntil != null && DateTime.now().isBefore(snoozedUntil!)) {
-      return false; // Still snoozed
+  // ── Helpers ──────────────────────────────────────────
+
+  static List<String> _readTimes(Map<String, dynamic> map) {
+    if (map['times'] is List) {
+      return List<String>.from(map['times']);
     }
-    return true; // Time to remind!
+    // backward-compat: old docs had a single 'time' string
+    if (map['time'] != null && map['time'] != 'all-day') {
+      return [map['time']];
+    }
+    return [];
   }
 
-  DateTime snoozeUntil(int minutes) {
-    return DateTime.now().add(Duration(minutes: minutes));
+  static DateTime? _readDate(dynamic v) {
+    if (v == null || v is! String || v.isEmpty) return null;
+    return DateTime.tryParse(v);
   }
 
-  String getSnoozeText() {
-    if (snoozedUntil == null) return '';
-    final remaining = snoozedUntil!.difference(DateTime.now());
-    if (remaining.inMinutes <= 0) return '';
-    return '(Snoozed for ${remaining.inMinutes} min)';
+  /// 'yyyy-MM-dd' for a date (no time component).
+  static String _dateKey(DateTime? d) {
+    if (d == null) return '';
+    final m = d.month.toString().padLeft(2, '0');
+    final day = d.day.toString().padLeft(2, '0');
+    return '${d.year}-$m-$day';
   }
+
+  static String dateKeyOf(DateTime d) => _dateKey(d);
+
+  /// Does this reminder apply on the given day?
+  bool isActiveOn(DateTime day) {
+    final d = DateTime(day.year, day.month, day.day);
+
+    if (startDate != null) {
+      final s = DateTime(startDate!.year, startDate!.month, startDate!.day);
+      if (d.isBefore(s)) return false;
+    }
+    if (endDate != null) {
+      final e = DateTime(endDate!.year, endDate!.month, endDate!.day);
+      if (d.isAfter(e)) return false;
+    }
+
+    if (repeat == 'once') {
+      return startDate != null && _dateKey(startDate) == _dateKey(d);
+    }
+    if (repeat == 'daily') return true;
+
+    // weekday list e.g. 'mon,wed,fri'
+    const names = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    final today = names[d.weekday - 1];
+    return repeat.split(',').map((e) => e.trim()).contains(today);
+  }
+
+  String doseKey(DateTime day, String time) => '${_dateKey(day)}_$time';
+
+  bool isDoseTaken(DateTime day, String time) =>
+      doseLog[doseKey(day, time)] == true;
+
+  /// How many of today's doses are done — for adherence display.
+  int takenCountOn(DateTime day) =>
+      times.where((t) => isDoseTaken(day, t)).length;
 }

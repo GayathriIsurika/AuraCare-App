@@ -2,7 +2,9 @@ import 'package:auracare_app/constant/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class DatePickerWidget extends StatefulWidget {
-  const DatePickerWidget({super.key});
+  final ValueChanged<DateTime> onDateSelected;
+
+  const DatePickerWidget({super.key, required this.onDateSelected});
 
   @override
   State<DatePickerWidget> createState() => _DatePickerWidgetState();
@@ -10,7 +12,7 @@ class DatePickerWidget extends StatefulWidget {
 
 class _DatePickerWidgetState extends State<DatePickerWidget> {
   late int selectedIndex;
-  late List<dynamic> items; // ← mix of DateTime and String
+  late List<dynamic> items; // mix of DateTime and String (month labels)
 
   @override
   void initState() {
@@ -20,30 +22,31 @@ class _DatePickerWidgetState extends State<DatePickerWidget> {
     items = [];
     selectedIndex = 0;
 
-    // ── Build list with month labels ──
     DateTime current = today;
     int lastMonth = -1;
 
     for (int i = 0; i < 365; i++) {
       current = today.add(Duration(days: i));
 
-      // ── Add month label when month changes ──
       if (current.month != lastMonth) {
-        items.add(getMonthName(current)); // ← add "March", "April"...
+        items.add(getMonthName(current));
         lastMonth = current.month;
       }
 
-      items.add(current); // ← add date
+      items.add(current);
     }
+
+    // Tell the parent the initial selection (today) after first frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onDateSelected(today);
+    });
   }
 
-  // ── Get day name ──
   String getDayName(DateTime date) {
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     return dayNames[date.weekday % 7];
   }
 
-  // ── Get month name ──
   String getMonthName(DateTime date) {
     const months = [
       'January',
@@ -62,7 +65,6 @@ class _DatePickerWidgetState extends State<DatePickerWidget> {
     return months[date.month - 1];
   }
 
-  // ── Count only DateTime items for selectedIndex ──
   int getDateIndex(int itemIndex) {
     int count = 0;
     for (int i = 0; i < itemIndex; i++) {
@@ -76,18 +78,17 @@ class _DatePickerWidgetState extends State<DatePickerWidget> {
     return SizedBox(
       height: 90,
       child: ListView.builder(
-        physics: ClampingScrollPhysics(),
+        physics: const ClampingScrollPhysics(),
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
         itemBuilder: (context, index) {
-          // ── Month label item ──
           if (items[index] is String) {
             return Container(
               alignment: Alignment.center,
-              padding: EdgeInsets.only(left: 16, right: 8),
+              padding: const EdgeInsets.only(left: 16, right: 8),
               child: Text(
                 items[index],
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.black,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -97,7 +98,6 @@ class _DatePickerWidgetState extends State<DatePickerWidget> {
             );
           }
 
-          // ── Date item ──
           DateTime date = items[index] as DateTime;
           int dateIndex = getDateIndex(index);
           bool isSelected = dateIndex == selectedIndex;
@@ -107,26 +107,23 @@ class _DatePickerWidgetState extends State<DatePickerWidget> {
               setState(() {
                 selectedIndex = dateIndex;
               });
+              widget.onDateSelected(date);
             },
             child: Container(
               width: 60,
-              margin: EdgeInsets.symmetric(horizontal: 4),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
-                color: isSelected ? Color(0xFF1A4298) : Colors.white,
+                color: isSelected ? const Color(0xFF1A4298) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // ── Day name ──
                   Text(
                     getDayName(date),
-                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
                   ),
-
-                  SizedBox(height: 4),
-
-                  // ── Date number ──
+                  const SizedBox(height: 4),
                   Text(
                     date.day.toString(),
                     style: TextStyle(
@@ -135,10 +132,7 @@ class _DatePickerWidgetState extends State<DatePickerWidget> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
-                  SizedBox(height: 4),
-
-                  // ── Dot ──
+                  const SizedBox(height: 4),
                   Container(
                     width: 5,
                     height: 5,

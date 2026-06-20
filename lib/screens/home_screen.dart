@@ -64,19 +64,30 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ── Load upcoming reminder from Firebase ──
+  // ── Load upcoming reminders from Firebase ──
   Future<void> _loadUpcomingReminders() async {
     if (_firebaseService.currentUser == null) return;
 
     final reminders = await _firebaseService.getReminders();
     if (!mounted) return;
 
+    final today = DateTime.now();
+
+    // Earliest dose today that isn't taken yet ('99:99' = nothing left).
+    String nextOpen(ReminderModel r) {
+      final open = r.times.where((t) => !r.isDoseTaken(today, t)).toList()
+        ..sort();
+      return open.isEmpty ? '99:99' : open.first;
+    }
+
     final list =
         reminders
             .map((m) => ReminderModel.fromMap(m))
-            .where((r) => !r.isHydration && !r.isTaken)
+            .where((r) => !r.isHydration && r.type != 'hydration')
+            .where((r) => r.isActiveOn(today)) // active today
+            .where((r) => nextOpen(r) != '99:99') // still has a dose due
             .toList()
-          ..sort((a, b) => a.time.compareTo(b.time)); // "HH:mm" sorts correctly
+          ..sort((a, b) => nextOpen(a).compareTo(nextOpen(b)));
 
     setState(() {
       _upcomingReminders = list;
