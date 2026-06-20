@@ -9,7 +9,6 @@ class HomeUpcomingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // If no reminder, show empty state
     if (reminder == null) {
       return Container(
         padding: const EdgeInsets.all(16),
@@ -46,6 +45,12 @@ class HomeUpcomingCard extends StatelessWidget {
         ),
       );
     }
+
+    // First scheduled time of the day (new model uses a list of times).
+    final time = reminder!.times.isNotEmpty ? reminder!.times.first : '';
+    final subtitle = reminder!.dose.isNotEmpty
+        ? 'Take ${reminder!.dose}${time.isNotEmpty ? ' at $time' : ''}'
+        : (time.isNotEmpty ? 'At $time' : reminder!.instructions);
 
     return GestureDetector(
       onTap: onTap,
@@ -90,7 +95,7 @@ class HomeUpcomingCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Take ${reminder!.dose} at ${reminder!.time}',
+                    subtitle,
                     style: const TextStyle(color: Colors.grey, fontSize: 13),
                   ),
                 ],

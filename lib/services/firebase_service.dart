@@ -483,8 +483,14 @@ class FirebaseService {
     required String name,
     required String dose,
     required String instructions,
-    required String time,
-    bool isTaken = false,
+    String type =
+        'medicine', // 'medicine' | 'appointment' | 'hydration' | 'custom'
+    List<String> times = const [],
+    DateTime? startDate,
+    DateTime? endDate,
+    String repeat = 'daily', // 'daily' | 'once' | 'mon,wed,fri'
+    String doctorName = '',
+    String location = '',
     bool isHydration = false,
     String? reminderId,
   }) async {
@@ -494,21 +500,35 @@ class FirebaseService {
       final docId =
           reminderId ?? DateTime.now().millisecondsSinceEpoch.toString();
 
+      final data = <String, dynamic>{
+        'id': docId,
+        'type': type,
+        'name': name,
+        'dose': dose,
+        'instructions': instructions,
+        'times': times,
+        'startDate': _dateKey(startDate),
+        'endDate': _dateKey(endDate),
+        'repeat': repeat,
+        'doctorName': doctorName,
+        'location': location,
+        'isHydration': isHydration,
+        'updatedAt': DateTime.now().toIso8601String(),
+      };
+
+      // Only set createdAt + empty doseLog when creating a NEW reminder,
+      // so editing doesn't wipe the completion history.
+      if (reminderId == null) {
+        data['createdAt'] = DateTime.now().toIso8601String();
+        data['doseLog'] = <String, bool>{};
+      }
+
       await _firestore
           .collection('users')
           .doc(currentUser!.uid)
           .collection('reminders')
           .doc(docId)
-          .set({
-            'id': docId,
-            'name': name,
-            'dose': dose,
-            'instructions': instructions,
-            'time': time,
-            'isTaken': isTaken,
-            'isHydration': isHydration,
-            'createdAt': DateTime.now().toIso8601String(),
-          });
+          .set(data, SetOptions(merge: true)); // merge keeps doseLog on edit
 
       return null;
     } catch (e) {
@@ -534,22 +554,25 @@ class FirebaseService {
     }
   }
 
-  Future<String?> updateReminderStatus({
+  /// Mark a single dose (one time on one date) taken / not taken.
+  /// Writes into the doseLog map: { '2026-06-20_08:00': true }
+  Future<String?> setDoseTaken({
     required String reminderId,
-    required bool isTaken,
+    required DateTime day,
+    required String time,
+    required bool taken,
   }) async {
     try {
       if (currentUser == null) return 'User not logged in';
+
+      final key = '${_dateKey(day)}_$time';
 
       await _firestore
           .collection('users')
           .doc(currentUser!.uid)
           .collection('reminders')
           .doc(reminderId)
-          .update({
-            'isTaken': isTaken,
-            'lastTakenAt': isTaken ? DateTime.now().toIso8601String() : null,
-          });
+          .update({'doseLog.$key': taken});
 
       return null;
     } catch (e) {
@@ -572,5 +595,13 @@ class FirebaseService {
     } catch (e) {
       return e.toString();
     }
+  }
+
+  /// 'yyyy-MM-dd' (no time). Mirrors ReminderModel.dateKeyOf.
+  String _dateKey(DateTime? d) {
+    if (d == null) return '';
+    final m = d.month.toString().padLeft(2, '0');
+    final day = d.day.toString().padLeft(2, '0');
+    return '${d.year}-$m-$day';
   }
 }
