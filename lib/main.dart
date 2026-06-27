@@ -6,7 +6,6 @@ import 'package:auracare_app/widgets/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/welcome_screen.dart';
-import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/upload_report.dart';
 import 'screens/home_screen.dart';
@@ -15,6 +14,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:auracare_app/screens/medical_details_screen.dart';
 import 'package:auracare_app/screens/forgot_password_screen.dart';
 import 'package:auracare_app/screens/splash_screen.dart';
+import 'package:auracare_app/screens/pin_entry_screen.dart';
+import 'package:auracare_app/screens/set_pin_screen.dart';
 import 'package:auracare_app/firebase_options.dart';
 
 void main() async {
@@ -42,15 +43,16 @@ class MyApp extends StatelessWidget {
         '/': (context) => const OnboardingScreen(),
         '/welcome': (context) => const WelcomeScreen(),
         '/home': (context) => const HomeScreen(),
-        '/login': (context) => const LoginScreen(),
         '/forgot-password': (context) => const ForgotPasswordScreen(),
         '/signup': (context) => const SignupScreen(),
+        '/pin-entry': (context) => const PinEntryScreen(),
+        '/set-pin': (context) => const SetPinScreen(),
         '/emergency': (context) => EmergencySosScreen(),
         '/reminder': (context) => const ReminderScreen(),
         '/medical-details': (context) => MedicalDetailsScreen(),
         '/upload': (context) => const UploadReportScreen(),
         '/nearby': (context) =>
-            const PlaceholderScreen(title: 'Nearby Hospital'),
+        const PlaceholderScreen(title: 'Nearby Hospital'),
         '/ask_aura': (context) => const PlaceholderScreen(title: 'Ask Aura'),
         '/profile': (context) => const ProfileScreen(),
         '/hospital': (context) => const HealthDirectoryScreen(),

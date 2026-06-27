@@ -43,12 +43,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
     } else {
 
-      Navigator.pushReplacementNamed(context, '/signup');
+      Navigator.pushReplacementNamed(context, '/welcome');
     }
   }
 
   void _onSkipPressed() {
-    Navigator.pushReplacementNamed(context, '/signup');
+    Navigator.pushReplacementNamed(context, '/welcome');
   }
 
   @override
