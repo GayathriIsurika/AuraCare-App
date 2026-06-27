@@ -75,41 +75,13 @@ class WelcomeScreen extends StatelessWidget {
 
                     const SizedBox(height: 40),
 
-                    // ── Login Button ──
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/login');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4A90D9),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Text(
-                          'Login',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
                     // ── Sign Up Button ──
                     SizedBox(
                       width: double.infinity,
                       height: 52,
                       child: OutlinedButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, '/');
+                          Navigator.pushNamed(context, '/signup');
                         },
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(
