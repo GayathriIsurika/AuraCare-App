@@ -16,7 +16,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   final FirebaseService _firebaseService = FirebaseService();
 
-  // Controllers
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _usernameController = TextEditingController();
@@ -47,8 +46,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     if (data != null) {
       setState(() {
-        // Fill controllers with existing data
-        // Split fullName into first and last
         final nameParts = (data['fullName'] ?? '').split(' ');
         _firstNameController.text = nameParts.isNotEmpty ? nameParts[0] : '';
         _lastNameController.text = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
@@ -57,18 +54,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _emailController.text = data['email'] ?? '';
         _locationController.text = data['location'] ?? '';
 
-        // Fill phone without country code
         final phone = data['phone'] ?? '';
         if (phone.length > 3) {
           _phoneController.text = phone.substring(3);
         }
 
-        // Set gender dropdown
         _selectedGender = data['gender']?.isNotEmpty == true
             ? data['gender']
             : null;
 
-        // Parse date string back to DateTime
+
         if (data['dateOfBirth'] != null && data['dateOfBirth'].toString().isNotEmpty) {
           try {
             final parts = data['dateOfBirth'].split('/');
@@ -214,7 +209,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         await _firebaseService.uploadProfileImage(_profileImage!);
       }
 
-      // Format date as string
+
       String dateString = '';
       if (_selectedDate != null) {
         dateString =
@@ -223,7 +218,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             '${_selectedDate!.year}';
       }
 
-      // Save all profile fields to Firestore
+
       String? error = await _firebaseService.updateUserProfile(
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
@@ -240,7 +235,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (error == null) {
         // Success
         if (mounted) {
-          Navigator.pop(context); // go back to profile
+          Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Profile saved successfully!'),
@@ -290,7 +285,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         centerTitle: true,
         actions: [
-          // Tick button saves profile
+
           IconButton(
             icon: _isLoading
                 ? const SizedBox(
@@ -307,7 +302,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ],
       ),
 
-      // Show loading while fetching existing data
       body: _isLoadingData
           ? const Center(
         child: CircularProgressIndicator(color: buttonStart),
@@ -320,7 +314,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Column(
             children: [
 
-              // Blue header with photo
               Container(
                 width: double.infinity,
                 color: buttonStart,
@@ -341,7 +334,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               ? NetworkImage(_existingProfileImageUrl)
                               : null,
                           child: _profileImage == null && _existingProfileImageUrl.isEmpty
-                              ? const Icon(                                  // ← show icon if no image
+                              ? const Icon(
                             Icons.person,
                             color: Colors.white,
                             size: 40,
@@ -373,7 +366,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
 
-              // Form Card
               Container(
                 margin: const EdgeInsets.all(20),
                 padding: const EdgeInsets.all(20),

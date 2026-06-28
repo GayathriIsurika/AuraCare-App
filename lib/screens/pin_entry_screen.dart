@@ -15,16 +15,16 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
   final FirebaseService _firebaseService = FirebaseService();
 
   String _enteredPin = '';
-  bool _hasError = false;      // ← shows red dots on wrong PIN
-  int _attemptCount = 0;       // ← counts wrong attempts
+  bool _hasError = false;
+  int _attemptCount = 0;
   bool _isLoading = false;
 
-  // ── Handle number press ──
+  // Handle number press
   void _onNumberPressed(String number) {
     if (_enteredPin.length < 4) {
       setState(() {
         _enteredPin += number;
-        _hasError = false; // reset error when typing
+        _hasError = false;
       });
 
       // Auto verify when 4 digits entered
@@ -34,7 +34,6 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
     }
   }
 
-  // ── Handle delete ──
   void _onDeletePressed() {
     if (_enteredPin.isNotEmpty) {
       setState(() {
@@ -44,7 +43,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
     }
   }
 
-  // ── Verify entered PIN ──
+  // Verify entered PIN
   Future<void> _verifyPin() async {
     setState(() => _isLoading = true);
 
@@ -53,16 +52,15 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
     setState(() => _isLoading = false);
 
     if (isCorrect) {
-      // ← Correct PIN → go to dashboard
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/home');
       }
     } else {
-      // ← Wrong PIN
+
       _attemptCount++;
       setState(() {
         _hasError = true;
-        _enteredPin = ''; // clear entered PIN
+        _enteredPin = '';
       });
 
       // Show error message
@@ -81,7 +79,6 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
     }
   }
 
-  // ── Logout and go to login screen ──
   Future<void> _useEmailLogin() async {
     // Delete PIN so they can reset it after login
     await _pinService.deletePin();
@@ -103,7 +100,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
 
               const SizedBox(height: 60),
 
-              // ── App logo ──
+              // App logo
               Image.asset(
                 'assets/images/auracare_logo.png',
                 width: 80,
@@ -133,7 +130,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
 
               const SizedBox(height: 48),
 
-              // ── PIN Dots ──
+              // PIN Dots
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(4, (index) {
@@ -145,7 +142,6 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
                     height: 20,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      // ← Red dots on wrong PIN
                       color: _hasError
                           ? Colors.red
                           : isFilled
@@ -166,14 +162,14 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
 
               const SizedBox(height: 60),
 
-              // ── Number Pad ──
+              //Number Pad
               _isLoading
                   ? const CircularProgressIndicator(color: buttonStart)
                   : _buildNumberPad(),
 
               const Spacer(),
 
-              // ── Forgot PIN ──
+              // Forgot PIN
               TextButton(
                 onPressed: _useEmailLogin,
                 child: const Text(

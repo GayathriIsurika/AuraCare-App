@@ -8,13 +8,11 @@ class WelcomeScreen extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          //  Hero image  ──
           Expanded(
             flex: 5,
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Background image
                 Image.asset(
                   'assets/images/welcome_hero.png',
                   fit: BoxFit.cover,
@@ -23,7 +21,6 @@ class WelcomeScreen extends StatelessWidget {
             ),
           ),
 
-          // ── BOTTOM HALF: White/light card ──
           Expanded(
             flex: 5,
             child: Container(
@@ -42,7 +39,7 @@ class WelcomeScreen extends StatelessWidget {
                   children: [
                     const SizedBox(height: 16),
 
-                    // ── Logo ──
+                    //Logo
                     Image.asset(
                       'assets/images/auracare_logo.png',
                       width: 120,
@@ -52,7 +49,7 @@ class WelcomeScreen extends StatelessWidget {
 
                     const SizedBox(height: 12),
 
-                    // ── App Name ──
+                    //App Name
                     const Text(
                       'AuraCare',
                       style: TextStyle(
@@ -64,7 +61,7 @@ class WelcomeScreen extends StatelessWidget {
 
                     const SizedBox(height: 8),
 
-                    // ── Tagline ──
+                    //Tagline
                     const Text(
                       'Your Health, Smarter',
                       style: TextStyle(
@@ -75,7 +72,7 @@ class WelcomeScreen extends StatelessWidget {
 
                     const SizedBox(height: 40),
 
-                    // ── Sign Up Button ──
+                    // Sign Up Button
                     SizedBox(
                       width: double.infinity,
                       height: 52,

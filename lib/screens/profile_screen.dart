@@ -1,3 +1,4 @@
+import 'package:auracare_app/screens/set_pin_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:auracare_app/constant/app_colors.dart';
 import 'package:auracare_app/screens/edit_profile_screen.dart';
@@ -36,7 +37,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  // Get initials from full name for avatar
   String _getInitials(String? fullName) {
     if (fullName == null || fullName.isEmpty) return '?';
     List<String> parts = fullName.trim().split(' ');
@@ -76,12 +76,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Profile Card ──
-            // Shows real data from Firebase
+            // Profile Card
             GestureDetector(
               onTap: () async {
-                // Wait for edit screen to finish
-                // then reload data to show updated info
                 await Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -103,13 +100,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: Row(
                   children: [
-                    // ── Profile Photo ──
+                    // Profile Photo
                     CircleAvatar(
                       radius: 32,
                       backgroundColor: Colors.white.withValues(
                         alpha: 0.3,
                       ),
-                      // Show network image if available
                       backgroundImage:
                       (_userData?['profileImageUrl'] != null &&
                           _userData!['profileImageUrl']
@@ -123,7 +119,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               .toString()
                               .isEmpty)
                           ? Text(
-                        // Show initials from real name
                         _getInitials(_userData?['fullName']),
                         style: const TextStyle(
                           color: Colors.white,
@@ -142,7 +137,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            // Show real name or placeholder
                             _userData?['fullName'] ?? 'Your Name',
                             style: const TextStyle(
                               color: Colors.white,
@@ -177,7 +171,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
 
-                    //  arrow icon
                     const Icon(
                       Icons.arrow_forward_ios,
                       color: Colors.white70,
@@ -340,7 +333,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               buttonColor: buttonStart,
               textColor: Colors.black,
               onTap: () {
-                Navigator.pushNamed(context, '/set-pin');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SetPinScreen(
+                      isChangingPin: true, // ← tells screen it came from profile
+                    ),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 12),

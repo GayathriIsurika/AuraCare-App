@@ -46,7 +46,7 @@ class MyApp extends StatelessWidget {
         '/forgot-password': (context) => const ForgotPasswordScreen(),
         '/signup': (context) => const SignupScreen(),
         '/pin-entry': (context) => const PinEntryScreen(),
-        '/set-pin': (context) => const SetPinScreen(),
+        '/set-pin': (context) => const SetPinScreen(isChangingPin: false),
         '/emergency': (context) => EmergencySosScreen(),
         '/reminder': (context) => const ReminderScreen(),
         '/medical-details': (context) => MedicalDetailsScreen(),

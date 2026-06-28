@@ -72,7 +72,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // ── Top Bar ──
+              // Top Bar
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -96,7 +96,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
 
-              // ── PageView ──
+              // PageView
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
@@ -110,7 +110,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
 
-              // ── Dot Indicators ──
+              // Dot Indicators
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
@@ -132,7 +132,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
               const SizedBox(height: 32),
 
-              // ── Next Button ──
+              // Next Button
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
                 child: SizedBox(
