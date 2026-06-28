@@ -3,7 +3,10 @@ import 'package:auracare_app/constant/app_colors.dart';
 import 'package:auracare_app/services/pin_service.dart';
 
 class SetPinScreen extends StatefulWidget {
-  const SetPinScreen({super.key});
+  // ← Add parameter to know where we came from
+  final bool isChangingPin; // true = came from profile, false = new setup
+
+  const SetPinScreen({super.key, this.isChangingPin = false});
 
   @override
   State<SetPinScreen> createState() => _SetPinScreenState();
@@ -12,30 +15,25 @@ class SetPinScreen extends StatefulWidget {
 class _SetPinScreenState extends State<SetPinScreen> {
   final PinService _pinService = PinService();
 
-  String _pin = '';           // first PIN entered
-  String _confirmPin = '';    // confirmation PIN
-  bool _isConfirming = false; // true when on confirm step
+  String _pin = '';
+  String _confirmPin = '';
+  bool _isConfirming = false;
   bool _isLoading = false;
 
-  // ── Handle number button press ──
   void _onNumberPressed(String number) {
     setState(() {
       if (!_isConfirming) {
-        // ← First PIN entry
         if (_pin.length < 4) {
           _pin += number;
-          // Auto move to confirm when 4 digits entered
           if (_pin.length == 4) {
             Future.delayed(const Duration(milliseconds: 200), () {
-              setState(() => _isConfirming = true);
+              if (mounted) setState(() => _isConfirming = true);
             });
           }
         }
       } else {
-        // ← Confirming PIN
         if (_confirmPin.length < 4) {
           _confirmPin += number;
-          // Auto save when 4 digits entered
           if (_confirmPin.length == 4) {
             _savePin();
           }
@@ -44,7 +42,6 @@ class _SetPinScreenState extends State<SetPinScreen> {
     });
   }
 
-  // ── Handle delete button ──
   void _onDeletePressed() {
     setState(() {
       if (!_isConfirming) {
@@ -59,16 +56,16 @@ class _SetPinScreenState extends State<SetPinScreen> {
     });
   }
 
-  // ── Save PIN after confirmation ──
   Future<void> _savePin() async {
     if (_pin != _confirmPin) {
-      // PINs don't match — reset and start over
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('PINs do not match. Please try again.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('PINs do not match. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       setState(() {
         _pin = '';
         _confirmPin = '';
@@ -79,14 +76,24 @@ class _SetPinScreenState extends State<SetPinScreen> {
 
     setState(() => _isLoading = true);
 
-    // Save PIN securely
     await _pinService.savePin(_pin);
 
     setState(() => _isLoading = false);
 
     if (mounted) {
-      // Go to dashboard after PIN set
-      Navigator.pushReplacementNamed(context, '/home');
+      if (widget.isChangingPin) {
+        // ← Came from Profile → go back to Profile
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('PIN changed successfully!'),
+            backgroundColor: buttonStart,
+          ),
+        );
+      } else {
+        // ← New user setup → go to home
+        Navigator.pushReplacementNamed(context, '/home');
+      }
     }
   }
 
@@ -94,135 +101,140 @@ class _SetPinScreenState extends State<SetPinScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: background,
+      // ← Add appBar when changing PIN so user can go back
+      appBar: widget.isChangingPin
+          ? AppBar(
+        backgroundColor: background,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Change PIN',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      )
+          : null,
+
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
+        child: SingleChildScrollView(  // ← ADD ScrollView to prevent overflow
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
 
-              const SizedBox(height: 40),
+                const SizedBox(height: 40),
 
-              // ── Lock icon ──
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: buttonStart.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.lock_outline_rounded,
-                  color: buttonStart,
-                  size: 40,
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // ── Title changes based on step ──
-              Text(
-                _isConfirming ? 'Confirm Your PIN' : 'Set Your PIN',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              Text(
-                _isConfirming
-                    ? 'Enter your PIN again to confirm'
-                    : 'Create a 4-digit PIN to secure your account',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 48),
-
-              // ── PIN Dots ──
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(4, (index) {
-                  // Check how many digits entered
-                  final currentPin = _isConfirming ? _confirmPin : _pin;
-                  final isFilled = index < currentPin.length;
-
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 12),
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isFilled
-                          ? buttonStart        // ← filled dot
-                          : Colors.grey.shade300, // ← empty dot
-                      border: Border.all(
-                        color: isFilled ? buttonStart : Colors.grey.shade400,
-                        width: 2,
-                      ),
-                    ),
-                  );
-                }),
-              ),
-
-              const SizedBox(height: 60),
-
-              // ── Number Pad ──
-              _isLoading
-                  ? const CircularProgressIndicator(color: buttonStart)
-                  : _buildNumberPad(),
-
-              const Spacer(),
-
-              // ── Skip option ──
-              TextButton(
-                onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/home');
-                },
-                child: const Text(
-                  'Skip for now',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 14,
+                // ── Lock icon ──
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: buttonStart.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.lock_outline_rounded,
+                    color: buttonStart,
+                    size: 40,
                   ),
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 24),
+
+                // ── Title ──
+                Text(
+                  _isConfirming ? 'Confirm Your PIN' : 'Set Your PIN',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  _isConfirming
+                      ? 'Enter your PIN again to confirm'
+                      : 'Create a 4-digit PIN to secure your account',
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 40),  // ← reduced from 48
+
+                // ── PIN Dots ──
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(4, (index) {
+                    final currentPin = _isConfirming ? _confirmPin : _pin;
+                    final isFilled = index < currentPin.length;
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isFilled ? buttonStart : Colors.grey.shade300,
+                        border: Border.all(
+                          color: isFilled ? buttonStart : Colors.grey.shade400,
+                          width: 2,
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+
+                const SizedBox(height: 48),  // ← reduced from 60
+
+                // ── Number Pad or Loading ──
+                _isLoading
+                    ? const CircularProgressIndicator(color: buttonStart)
+                    : _buildNumberPad(),
+
+                const SizedBox(height: 24), // ← REPLACED Spacer() with fixed height
+
+                // ── Skip option (only for new setup) ──
+                if (!widget.isChangingPin)
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacementNamed(context, '/home');
+                    },
+                    child: const Text(
+                      'Skip for now',
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                  ),
+
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // ── Number Pad Widget ──
   Widget _buildNumberPad() {
     return Column(
       children: [
-        // Row 1: 1 2 3
         _buildNumberRow(['1', '2', '3']),
         const SizedBox(height: 16),
-        // Row 2: 4 5 6
         _buildNumberRow(['4', '5', '6']),
         const SizedBox(height: 16),
-        // Row 3: 7 8 9
         _buildNumberRow(['7', '8', '9']),
         const SizedBox(height: 16),
-        // Row 4: empty 0 delete
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Empty space
-            const SizedBox(width: 80),
-            const SizedBox(width: 16),
-            // 0 button
+            const SizedBox(width: 96),
             _buildNumberButton('0'),
             const SizedBox(width: 16),
-            // Delete button
             SizedBox(
               width: 80,
               height: 80,
@@ -247,7 +259,6 @@ class _SetPinScreenState extends State<SetPinScreen> {
     );
   }
 
-  // ── Build a row of 3 number buttons ──
   Widget _buildNumberRow(List<String> numbers) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -260,7 +271,6 @@ class _SetPinScreenState extends State<SetPinScreen> {
     );
   }
 
-  // ── Single number button ──
   Widget _buildNumberButton(String number) {
     return SizedBox(
       width: 80,

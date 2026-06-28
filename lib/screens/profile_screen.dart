@@ -1,3 +1,4 @@
+import 'package:auracare_app/screens/set_pin_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:auracare_app/constant/app_colors.dart';
 import 'package:auracare_app/screens/edit_profile_screen.dart';
@@ -340,7 +341,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               buttonColor: buttonStart,
               textColor: Colors.black,
               onTap: () {
-                Navigator.pushNamed(context, '/set-pin');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SetPinScreen(
+                      isChangingPin: true, // ← tells screen it came from profile
+                    ),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 12),
