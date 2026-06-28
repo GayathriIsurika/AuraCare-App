@@ -3,7 +3,6 @@ import 'package:auracare_app/services/firebase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 
 class UploadFabMenu extends StatefulWidget {
   const UploadFabMenu({super.key});
@@ -38,7 +37,6 @@ class _UploadFabMenuState extends State<UploadFabMenu>
     final error = await _firebaseService.saveMedicalRecord(
       file: File(filePath),
       title: result['title']!,
-      subtitle: result['title']!,
       category: autoCategory,
     );
 
@@ -197,25 +195,6 @@ class _UploadFabMenuState extends State<UploadFabMenu>
     });
   }
 
-  //Scan Document
-  Future<void> _scanDocument() async {
-    _close();
-    try {
-      List<String>? scannedImages = await CunningDocumentScanner.getPictures(
-        isGalleryImportAllowed: true,
-      );
-
-      if (scannedImages != null && scannedImages.isNotEmpty) {
-        await _uploadAndSave(
-          scannedImages.first,
-          defaultTitle: 'Scanned Document',
-        );
-      }
-    } catch (e) {
-      _showSnack('❌ Scan failed: $e');
-    }
-  }
-
   //Upload from Gallery
   Future<void> _pickFromGallery() async {
     _close();
@@ -280,12 +259,6 @@ class _UploadFabMenuState extends State<UploadFabMenu>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    _buildMenuItem(
-                      label: 'Scan Document',
-                      icon: Icons.document_scanner_outlined,
-                      color: const Color(0xFF4A90D9),
-                      onTap: _scanDocument,
-                    ),
                     const SizedBox(height: 12),
                     _buildMenuItem(
                       label: 'Upload from Gallery',

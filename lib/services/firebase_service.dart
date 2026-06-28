@@ -242,7 +242,6 @@ class FirebaseService {
   Future<String?> saveMedicalRecord({
     required File file,
     required String title,
-    required String subtitle,
     required String category,
   }) async {
     try {
@@ -254,7 +253,6 @@ class FirebaseService {
       await _firestore.collection('medical_records').add({
         'uid': currentUser!.uid,
         'title': title,
-        'subtitle': subtitle,
         'category': category,
         'cloudinaryUrl': uploaded['url'],
         'publicId': uploaded['publicId'],

@@ -38,7 +38,6 @@ dependencies:
   country_code_picker: ^3.0.0
   image_picker: ^1.0.7
   file_picker: ^11.0.2
-  cunning_document_scanner: ^1.4.0
   # ── Firebase ──────────────────────────────
   firebase_core: ^4.9.0          # ← required for all Firebase
   firebase_auth: ^6.5.1          # ← for login/signup
