@@ -472,7 +472,7 @@ class FirebaseService {
       if (name.contains(keyword)) return 'lab';
     }
 
-    return 'lab'; // default
+    return 'other'; // default
   }
 
   // ── REMINDER METHODS ──
