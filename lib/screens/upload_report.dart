@@ -6,7 +6,6 @@ import '../widgets/bottom_nav_bar.dart';
 
 class MedicalRecord {
   final String title;
-  final String subtitle;
   final String date;
   final IconData icon;
   final Color iconColor;
@@ -15,7 +14,6 @@ class MedicalRecord {
 
   const MedicalRecord({
     required this.title,
-    required this.subtitle,
     required this.date,
     required this.icon,
     required this.iconColor,
@@ -97,7 +95,6 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     final category = data['category'] ?? 'lab';
     return MedicalRecord(
       title: data['title'] ?? 'Untitled',
-      subtitle: data['subtitle'] ?? '',
       date: data['date'] ?? '',
       category: category,
       icon: _iconForCategory(category),
@@ -208,8 +205,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
                   // Apply search filter
                   if (_searchQuery.isNotEmpty) {
                     records = records.where((r) {
-                      return r.title.toLowerCase().contains(_searchQuery) ||
-                          r.subtitle.toLowerCase().contains(_searchQuery);
+                      return r.title.toLowerCase().contains(_searchQuery);
                     }).toList();
                   }
 
@@ -335,10 +331,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
                     color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  record.subtitle,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ],
                 ),
               ],
             ),
