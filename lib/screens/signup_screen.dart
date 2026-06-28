@@ -22,7 +22,7 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _isConfirming = false;
   bool _isLoading = false;
   bool _isGoogleLoading = false;
-  int _currentStep = 1; // 1 = name/email, 2 = PIN
+  int _currentStep = 1;
 
   @override
   void dispose() {
@@ -31,7 +31,7 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  // ── Step 1: Validate and go to PIN step ──
+  // Validate and go to PIN step
   void _goToSetPin() {
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -54,10 +54,10 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
 
-    setState(() => _currentStep = 2); // ← move to PIN step
+    setState(() => _currentStep = 2);
   }
 
-  // ── Handle PIN number press ──
+  // Handle PIN number press
   void _onNumberPressed(String number) {
     setState(() {
       if (!_isConfirming) {
@@ -73,14 +73,13 @@ class _SignupScreenState extends State<SignupScreen> {
         if (_confirmPin.length < 4) {
           _confirmPin += number;
           if (_confirmPin.length == 4) {
-            _completeSignup(); // ← only called once here
+            _completeSignup();
           }
         }
       }
     });
   }
 
-  // ── Handle delete press ──
   void _onDeletePressed() {
     setState(() {
       if (!_isConfirming) {
@@ -95,7 +94,7 @@ class _SignupScreenState extends State<SignupScreen> {
     });
   }
 
-  // ── Complete signup with Firebase + save PIN ──
+  // Complete signup with Firebase ,save PIN
   Future<void> _completeSignup() async {
     if (_pin != _confirmPin) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -117,18 +116,15 @@ class _SignupScreenState extends State<SignupScreen> {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
-    // ← Auto password — user never needs to know this
     final autoPassword =
         'AuraCare_${_pin}_${_emailController.text.trim()}';
 
-    // ← Try creating new account
     String? error = await _firebaseService.signUp(
       email: _emailController.text.trim(),
       password: autoPassword,
       fullName: _nameController.text.trim(),
     );
 
-    // ← If email already exists try logging in
     if (error != null &&
         (error.contains('already') || error.contains('in-use'))) {
       error = await _firebaseService.login(
@@ -136,7 +132,6 @@ class _SignupScreenState extends State<SignupScreen> {
         password: autoPassword,
       );
 
-      // ← Update name if logging in to existing account
       if (error == null) {
         await _firebaseService.updateUserName(
           _nameController.text.trim(),
@@ -145,12 +140,11 @@ class _SignupScreenState extends State<SignupScreen> {
     }
 
     if (error == null) {
-      // ← Save PIN to device
+      // Save PIN to device
       await _pinService.savePin(_pin);
 
       setState(() => _isLoading = false);
 
-      // ← Go directly to home — no splash — no PIN entry again
       navigator.pushReplacementNamed('/home');
     } else {
       setState(() {
@@ -165,7 +159,7 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
-  // ── Google Signup ──
+  // Google Signup
   Future<void> _signUpWithGoogle() async {
     setState(() => _isGoogleLoading = true);
 
@@ -176,7 +170,7 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _isGoogleLoading = false);
 
     if (error == null) {
-      // ← After Google auth go to PIN step
+      // After Google auth go to PIN step
       setState(() => _currentStep = 2);
     } else if (error != 'Sign in cancelled') {
       messenger.showSnackBar(
@@ -197,7 +191,7 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  // ── Step 1: Name + Email ──
+  // Name,Email
   Widget _buildStep1() {
     return Center(
       child: SingleChildScrollView(
@@ -224,7 +218,7 @@ class _SignupScreenState extends State<SignupScreen> {
               child: Column(
                 children: [
 
-                  // ── Logo ──
+                  // Logo
                   Image.asset(
                     'assets/images/auracare_logo.png',
                     width: 80,
@@ -251,7 +245,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
                   const SizedBox(height: 28),
 
-                  // ── Full Name ──
+                  //Full Name
                   TextField(
                     controller: _nameController,
                     keyboardType: TextInputType.name,
@@ -276,7 +270,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
                   const SizedBox(height: 14),
 
-                  // ── Email ──
+                  // Email
                   TextField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
@@ -300,7 +294,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
                   const SizedBox(height: 24),
 
-                  // ── Continue Button ──
+                  // Continue Button
                   SizedBox(
                     width: double.infinity,
                     height: 52,
@@ -326,7 +320,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
                   const SizedBox(height: 16),
 
-                  // ── Divider ──
+                  //Divider
                   Row(
                     children: [
                       Expanded(
@@ -350,7 +344,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
                   const SizedBox(height: 16),
 
-                  // ── Google Sign Up ──
+                  // Google Sign Up
                   SizedBox(
                     width: double.infinity,
                     height: 52,
@@ -397,7 +391,7 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  // ── Step 2: Set PIN ──
+  // Set PIN
   Widget _buildStep2() {
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -406,7 +400,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
           const SizedBox(height: 40),
 
-          // ── Lock icon ──
+          //Lock icon
           Container(
             width: 80,
             height: 80,
@@ -423,7 +417,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
           const SizedBox(height: 24),
 
-          // ── Title ──
+          //Title
           Text(
             _isConfirming ? 'Confirm Your PIN' : 'Set Your PIN',
             style: const TextStyle(
@@ -445,7 +439,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
           const SizedBox(height: 48),
 
-          // ── PIN Dots ──
+          // PIN Dots
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(4, (index) {
@@ -470,14 +464,14 @@ class _SignupScreenState extends State<SignupScreen> {
 
           const SizedBox(height: 60),
 
-          // ── Number Pad or Loading ──
+          // Number Pad or Loading
           _isLoading
               ? const CircularProgressIndicator(color: buttonStart)
               : _buildNumberPad(),
 
           const Spacer(),
 
-          // ── Back button (only on PIN entry, not confirm) ──
+          // Back button (only on PIN entry, not confirm)
           if (!_isConfirming)
             TextButton(
               onPressed: () {
@@ -489,8 +483,8 @@ class _SignupScreenState extends State<SignupScreen> {
                 });
               },
               child: const Text(
-                '← Back',
-                style: TextStyle(color: Colors.grey, fontSize: 14),
+                'Back',
+                style: TextStyle(color: buttonStart, fontSize: 17),
               ),
             ),
         ],
@@ -498,7 +492,7 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  // ── Number Pad ──
+  // Number Pad
   Widget _buildNumberPad() {
     return Column(
       children: [

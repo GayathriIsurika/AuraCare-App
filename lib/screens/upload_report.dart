@@ -333,9 +333,8 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
                 ),
                   ],
                 ),
-              ],
+
             ),
-          ),
           Text(
             record.date,
             style: const TextStyle(fontSize: 12, color: Colors.grey),

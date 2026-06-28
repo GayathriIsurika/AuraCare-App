@@ -24,7 +24,6 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
 
-  // Controllers
   late TextEditingController _weightController;
   late TextEditingController _heightController;
   late TextEditingController _newAllergyController;
@@ -50,6 +49,91 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     if (bmi < 25) return Colors.green;
     if (bmi < 30) return Colors.orange;
     return Colors.red;
+  }
+  // ideal BMI range based on age
+  String get idealBmiRange {
+    // For adults (18+) standard range is 18.5 - 24.9
+    return '18.5 - 24.9';
+  }
+
+//Calculate minimum weight for normal BMI
+  double get minNormalWeight {
+    final heightInMeters = height / 100;
+    return 18.5 * (heightInMeters * heightInMeters);
+  }
+
+//Calculate maximum weight for normal BMI
+  double get maxNormalWeight {
+    final heightInMeters = height / 100;
+    return 24.9 * (heightInMeters * heightInMeters);
+  }
+
+// Weight difference from ideal range
+  double get weightDifference {
+    if (bmi < 18.5) {
+      // Underweight: how much to gain
+      return minNormalWeight - weight;
+    } else if (bmi >= 25) {
+      // Overweight/Obese: how much to lose
+      return weight - maxNormalWeight;
+    }
+    return 0; // Normal
+  }
+
+// ── BMI advice based on category ──
+  String get bmiAdvice {
+    switch (bmiCategory) {
+      case 'Underweight':
+        return 'You need to gain ${weightDifference.toStringAsFixed(1)} kg to reach a healthy weight.';
+      case 'Normal':
+        return 'Great! Your weight is in the healthy range. Keep maintaining your lifestyle.';
+      case 'Overweight':
+        return 'You need to lose ${weightDifference.toStringAsFixed(1)} kg to reach a healthy weight.';
+      case 'Obese':
+        return 'You need to lose ${weightDifference.toStringAsFixed(1)} kg to reach a healthy weight. Please consult a doctor.';
+      default:
+        return '';
+    }
+  }
+
+// ── Tips based on BMI category ──
+  List<String> get bmiTips {
+    switch (bmiCategory) {
+      case 'Underweight':
+        return [
+          'Eat more calorie-dense foods like nuts, avocados and whole grains',
+          'Add protein-rich foods: eggs, chicken, legumes and dairy',
+          'Eat 5-6 small meals per day instead of 3 large ones',
+          'Do strength training to build healthy muscle mass',
+          'Consult a nutritionist for a personalized meal plan',
+        ];
+      case 'Normal':
+        return [
+          'Maintain your balanced diet with fruits and vegetables',
+          'Exercise at least 30 minutes a day, 5 days a week',
+          'Stay hydrated with 8 glasses of water daily',
+          'Get 7-8 hours of quality sleep each night',
+          'Keep regular health checkups to stay on track',
+        ];
+      case 'Overweight':
+        return [
+          'Reduce sugary drinks and processed foods',
+          'Increase daily physical activity try brisk walking',
+          'Eat more vegetables and fiber rich foods',
+          'Control portion sizes at each meal',
+          'Track your calories with a food diary or app',
+        ];
+      case 'Obese':
+        return [
+          'Consult a doctor or dietitian immediately',
+          'Start with low-impact exercises like swimming or walking',
+          'Avoid fast food and high-calorie snacks completely',
+          'Set small, achievable weight loss goals each week',
+          'Consider joining a support group for motivation',
+        ];
+      default:
+        return [];
+    }
   }
 
   @override
@@ -180,13 +264,13 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
               : TextButton(
             onPressed: () {
               if (isEditing) {
-                _saveMedicalData(); // save to Firebase when done
+                _saveMedicalData();
               } else {
-                setState(() => isEditing = true); // enter edit mode
+                setState(() => isEditing = true);
               }
             },
             child: Text(
-              isEditing ? 'Save' : 'Edit', // changed Done to Save
+              isEditing ? 'Save' : 'Edit',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -197,7 +281,6 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
         ],
       ),
 
-      // Show loading spinner while data loads
       body: _isLoading
           ? const Center(
         child: CircularProgressIndicator(
@@ -229,6 +312,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
               ],
             ),
 
+
             const SizedBox(height: 12),
 
             // Weight , Height
@@ -259,6 +343,9 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+
+            _buildBMIAnalysisCard(),
 
             const SizedBox(height: 24),
 
@@ -495,6 +582,364 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  // BMI Analysis Card
+  Widget _buildBMIAnalysisCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: bmiColor.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: bmiColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.analytics_outlined,
+                  color: bmiColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'BMI Analysis',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // BMI Scale Bar
+          _buildBMIScaleBar(),
+
+          const SizedBox(height: 16),
+
+          // ideal BMI Range
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: Colors.green.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.green,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Ideal BMI Range',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    Text(
+                      idealBmiRange,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text(
+                      'Healthy Weight Range',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    Text(
+                      '${minNormalWeight.toStringAsFixed(1)} - ${maxNormalWeight.toStringAsFixed(1)} kg',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Current Status
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: bmiColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: bmiColor.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  bmiCategory == 'Normal'
+                      ? Icons.thumb_up_outlined
+                      : Icons.info_outline,
+                  color: bmiColor,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    bmiAdvice,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: bmiColor,
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Tips Section
+          Row(
+            children: [
+              Icon(
+                Icons.lightbulb_outline,
+                color: Colors.amber.shade700,
+                size: 18,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'What you should do:',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amber.shade800,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          // Tip Items
+          ...bmiTips.asMap().entries.map((entry) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: buttonStart.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${entry.key + 1}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: buttonStart,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      entry.value,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black87,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+// BMI Scale Bar
+  Widget _buildBMIScaleBar() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+
+        // Scale bar
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: Row(
+            children: [
+              // Underweight (blue)
+              Expanded(
+                flex: 185,
+                child: Container(height: 10, color: Colors.blue.shade300),
+              ),
+              // Normal (green)
+              Expanded(
+                flex: 64,
+                child: Container(height: 10, color: Colors.green.shade400),
+              ),
+              // Overweight (orange)
+              Expanded(
+                flex: 50,
+                child: Container(height: 10, color: Colors.orange.shade400),
+              ),
+              // Obese (red)
+              Expanded(
+                flex: 100,
+                child: Container(height: 10, color: Colors.red.shade400),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        // Labels
+        const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '<18.5',
+              style: TextStyle(fontSize: 10, color: Colors.blue),
+            ),
+            Text(
+              '18.5',
+              style: TextStyle(fontSize: 10, color: Colors.green),
+            ),
+            Text(
+              '25',
+              style: TextStyle(fontSize: 10, color: Colors.orange),
+            ),
+            Text(
+              '30',
+              style: TextStyle(fontSize: 10, color: Colors.red),
+            ),
+            Text(
+              '30+',
+              style: TextStyle(fontSize: 10, color: Colors.red),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 4),
+
+        // Category labels
+        const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Under',
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.blue,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              'Normal',
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.green,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              'Over',
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.orange,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              'Obese',
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.red,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 8),
+
+        // Current BMI indicator
+        Row(
+          children: [
+            Icon(
+              Icons.arrow_upward,
+              color: bmiColor,
+              size: 14,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'Your BMI: ${bmi.toStringAsFixed(1)} (${bmiCategory})',
+              style: TextStyle(
+                fontSize: 12,
+                color: bmiColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -785,7 +1230,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     );
   }
 
-  // Blood Type Dialog
+  // Blood Type
   void _showBloodTypeDialog() {
     final bloodTypes = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 

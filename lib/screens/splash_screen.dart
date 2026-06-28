@@ -13,7 +13,6 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
 
-  // ── Single simple animation controller ──
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
@@ -24,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500), // ← shorter duration
+      duration: const Duration(milliseconds: 1500),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -76,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: buttonStart, // ← simple solid color background
+      backgroundColor: buttonStart,
       body: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
@@ -89,7 +88,7 @@ class _SplashScreenState extends State<SplashScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
 
-                    // ── Logo ──
+                    //Logo
                     Image.asset(
                       'assets/images/auracare_logo.png',
                       width: 120,
@@ -98,7 +97,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                     const SizedBox(height: 16),
 
-                    // ── App name ──
+                    // App name
                     const Text(
                       'AuraCare',
                       style: TextStyle(
@@ -111,7 +110,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                     const SizedBox(height: 8),
 
-                    // ── Tagline ──
+                    // Tagline
                     const Text(
                       'Your Health, Smarter',
                       style: TextStyle(

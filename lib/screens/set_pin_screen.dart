@@ -3,8 +3,7 @@ import 'package:auracare_app/constant/app_colors.dart';
 import 'package:auracare_app/services/pin_service.dart';
 
 class SetPinScreen extends StatefulWidget {
-  // ← Add parameter to know where we came from
-  final bool isChangingPin; // true = came from profile, false = new setup
+  final bool isChangingPin;
 
   const SetPinScreen({super.key, this.isChangingPin = false});
 
@@ -82,7 +81,6 @@ class _SetPinScreenState extends State<SetPinScreen> {
 
     if (mounted) {
       if (widget.isChangingPin) {
-        // ← Came from Profile → go back to Profile
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -91,7 +89,6 @@ class _SetPinScreenState extends State<SetPinScreen> {
           ),
         );
       } else {
-        // ← New user setup → go to home
         Navigator.pushReplacementNamed(context, '/home');
       }
     }
@@ -101,7 +98,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: background,
-      // ← Add appBar when changing PIN so user can go back
+      // Add appBar when changing PIN so user can go back
       appBar: widget.isChangingPin
           ? AppBar(
         backgroundColor: background,
@@ -121,7 +118,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
           : null,
 
       body: SafeArea(
-        child: SingleChildScrollView(  // ← ADD ScrollView to prevent overflow
+        child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -129,7 +126,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
 
                 const SizedBox(height: 40),
 
-                // ── Lock icon ──
+                // Lock icon
                 Container(
                   width: 80,
                   height: 80,
@@ -146,7 +143,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
 
                 const SizedBox(height: 24),
 
-                // ── Title ──
+                // Title
                 Text(
                   _isConfirming ? 'Confirm Your PIN' : 'Set Your PIN',
                   style: const TextStyle(
@@ -166,9 +163,9 @@ class _SetPinScreenState extends State<SetPinScreen> {
                   textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: 40),  // ← reduced from 48
+                const SizedBox(height: 40),
 
-                // ── PIN Dots ──
+                //PIN Dots
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(4, (index) {
@@ -190,16 +187,15 @@ class _SetPinScreenState extends State<SetPinScreen> {
                   }),
                 ),
 
-                const SizedBox(height: 48),  // ← reduced from 60
+                const SizedBox(height: 48),
 
-                // ── Number Pad or Loading ──
+                // Number Pad or Loading
                 _isLoading
                     ? const CircularProgressIndicator(color: buttonStart)
                     : _buildNumberPad(),
 
-                const SizedBox(height: 24), // ← REPLACED Spacer() with fixed height
+                const SizedBox(height: 24),
 
-                // ── Skip option (only for new setup) ──
                 if (!widget.isChangingPin)
                   TextButton(
                     onPressed: () {
@@ -207,7 +203,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
                     },
                     child: const Text(
                       'Skip for now',
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                      style: TextStyle(color: buttonStart, fontSize: 14),
                     ),
                   ),
 
