@@ -104,14 +104,15 @@ class _SetPinScreenState extends State<SetPinScreen> {
         backgroundColor: background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Change PIN',
           style: TextStyle(
-            color: Colors.black,
+            color: Colors.black87,
             fontWeight: FontWeight.bold,
+              fontSize: 18
           ),
         ),
       )
@@ -128,8 +129,8 @@ class _SetPinScreenState extends State<SetPinScreen> {
 
                 // Lock icon
                 Container(
-                  width: 80,
-                  height: 80,
+                  width: 70,
+                  height: 70,
                   decoration: BoxDecoration(
                     color: buttonStart.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
@@ -141,29 +142,29 @@ class _SetPinScreenState extends State<SetPinScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
 
                 // Title
                 Text(
                   _isConfirming ? 'Confirm Your PIN' : 'Set Your PIN',
                   style: const TextStyle(
-                    fontSize: 24,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
 
                 Text(
                   _isConfirming
                       ? 'Enter your PIN again to confirm'
                       : 'Create a 4-digit PIN to secure your account',
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  style: const TextStyle(fontSize: 14, color: buttonStart),
                   textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 36),
 
                 //PIN Dots
                 Row(
@@ -173,8 +174,8 @@ class _SetPinScreenState extends State<SetPinScreen> {
                     final isFilled = index < currentPin.length;
                     return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 12),
-                      width: 20,
-                      height: 20,
+                      width: 18,
+                      height: 18,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isFilled ? buttonStart : Colors.grey.shade300,
@@ -187,7 +188,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
                   }),
                 ),
 
-                const SizedBox(height: 48),
+                const SizedBox(height: 40),
 
                 // Number Pad or Loading
                 _isLoading
@@ -228,12 +229,12 @@ class _SetPinScreenState extends State<SetPinScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(width: 96),
+            const SizedBox(width: 104),
             _buildNumberButton('0'),
             const SizedBox(width: 16),
             SizedBox(
-              width: 80,
-              height: 80,
+              width: 75,
+              height: 75,
               child: GestureDetector(
                 onTap: _onDeletePressed,
                 child: Container(
@@ -269,8 +270,8 @@ class _SetPinScreenState extends State<SetPinScreen> {
 
   Widget _buildNumberButton(String number) {
     return SizedBox(
-      width: 80,
-      height: 80,
+      width: 75,
+      height: 75,
       child: GestureDetector(
         onTap: () => _onNumberPressed(number),
         child: Container(
@@ -289,7 +290,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
             child: Text(
               number,
               style: const TextStyle(
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
               ),

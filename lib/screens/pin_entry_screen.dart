@@ -93,53 +93,50 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
     return Scaffold(
       backgroundColor: background,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
 
-              const SizedBox(height: 60),
+              const SizedBox(height: 40),
 
               // App logo
               Image.asset(
                 'assets/images/auracare_logo.png',
-                width: 80,
-                height: 80,
+                width: 70,
+                height: 70,
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               const Text(
                 'AuraCare',
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
               const Text(
                 'Enter your PIN to continue',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 14, color: buttonStart),
               ),
 
-              const SizedBox(height: 48),
+              const SizedBox(height: 36),
 
               // PIN Dots
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(4, (index) {
                   final isFilled = index < _enteredPin.length;
-
                   return Container(
                     margin: const EdgeInsets.symmetric(horizontal: 12),
-                    width: 20,
-                    height: 20,
+                    width: 18,
+                    height: 18,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: _hasError
@@ -160,16 +157,16 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
                 }),
               ),
 
-              const SizedBox(height: 60),
+              const SizedBox(height: 40),
 
-              //Number Pad
+              // Number Pad
               _isLoading
                   ? const CircularProgressIndicator(color: buttonStart)
                   : _buildNumberPad(),
 
-              const Spacer(),
+              const SizedBox(height: 24),
 
-              // Forgot PIN
+              //  Forgot PIN
               TextButton(
                 onPressed: _useEmailLogin,
                 child: const Text(
@@ -207,8 +204,8 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
             _buildNumberButton('0'),
             const SizedBox(width: 16),
             SizedBox(
-              width: 80,
-              height: 80,
+              width: 75,
+              height: 75,
               child: GestureDetector(
                 onTap: _onDeletePressed,
                 child: Container(
@@ -235,7 +232,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: numbers.map((n) {
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 6),
           child: _buildNumberButton(n),
         );
       }).toList(),
@@ -244,8 +241,8 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
 
   Widget _buildNumberButton(String number) {
     return SizedBox(
-      width: 80,
-      height: 80,
+      width: 75,
+      height: 75,
       child: GestureDetector(
         onTap: () => _onNumberPressed(number),
         child: Container(
@@ -264,7 +261,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
             child: Text(
               number,
               style: const TextStyle(
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
               ),

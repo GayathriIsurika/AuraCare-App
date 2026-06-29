@@ -28,8 +28,8 @@ class WelcomeScreen extends StatelessWidget {
               decoration: const BoxDecoration(
                 color: Color(0xFFDDEEF8),
                 borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(36),
-                  topRight: Radius.circular(36),
+                  topLeft: Radius.circular(5),
+                  topRight: Radius.circular(5),
                 ),
               ),
               child: Padding(
