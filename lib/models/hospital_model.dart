@@ -6,6 +6,8 @@ class HospitalModel {
   final String imageUrl;
   final String phone;
   final String about;
+  final double? lat;
+  final double? lng;
 
   HospitalModel({
     required this.id,
@@ -15,6 +17,8 @@ class HospitalModel {
     required this.imageUrl,
     required this.phone,
     this.about = '',
+    this.lat,
+    this.lng,
   });
 
   factory HospitalModel.fromMap(String id, Map<String, dynamic> map) {
@@ -26,6 +30,8 @@ class HospitalModel {
       imageUrl: map['imageUrl'] ?? '',
       phone: map['phone'] ?? '',
       about: map['about'] ?? '',
+      lat: (map['lat'] ?? 0).toDouble(),
+      lng: (map['lng'] ?? 0).toDouble(),
     );
   }
 
@@ -36,5 +42,7 @@ class HospitalModel {
     'imageUrl': imageUrl,
     'phone': phone,
     'about': about,
+    'lat': lat,
+    'lng': lng,
   };
 }
