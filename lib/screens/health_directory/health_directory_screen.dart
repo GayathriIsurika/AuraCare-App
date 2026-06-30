@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../constant/app_colors.dart';
 import '../../models/doctor_model.dart';
 import '../../models/hospital_model.dart';
+import '../../services/hospital_service.dart';
 import '../../widgets/health_directory/search_bar_widget.dart';
 import '../../widgets/health_directory/filter_chip_row.dart';
 import '../../widgets/health_directory/hospital_card_widget.dart';
@@ -19,52 +20,14 @@ class HealthDirectoryScreen extends StatefulWidget {
 
 class _HealthDirectoryScreenState extends State<HealthDirectoryScreen> {
   final TextEditingController _searchController = TextEditingController();
-
   final List<String> _filterOptions = ['Hospitals', 'Doctors', 'Specialists'];
 
   String _selectedFilter = 'Hospitals';
   String _searchQuery = '';
 
-  // ── Dummy Data (replace with Firestore later) ────────────────────────────
-
-  final List<HospitalModel> _allHospitals = [
-    HospitalModel(
-      id: '1',
-      name: 'City General Hospital',
-      address: 'Colombo 02',
-      distanceKm: 3.5,
-      imageUrl: '',
-      phone: '+94112345678',
-      about: 'Leading hospital in Colombo.',
-    ),
-    HospitalModel(
-      id: '2',
-      name: 'Nawaloka Hospital',
-      address: 'Colombo 02',
-      distanceKm: 5.1,
-      imageUrl: '',
-      phone: '+94112345679',
-      about: 'Multi-specialty hospital.',
-    ),
-    HospitalModel(
-      id: '3',
-      name: 'Lanka Hospital',
-      address: 'Colombo 05',
-      distanceKm: 6.3,
-      imageUrl: '',
-      phone: '+94112345680',
-      about: 'Modern healthcare facility.',
-    ),
-    HospitalModel(
-      id: '4',
-      name: 'Asiri Medical Centre',
-      address: 'Colombo 05',
-      distanceKm: 7.8,
-      imageUrl: '',
-      phone: '+94112345681',
-      about: 'Advanced medical centre.',
-    ),
-  ];
+  List<HospitalModel> _allHospitals = [];
+  bool _isLoadingHospitals = false;
+  String? _locationError;
 
   final List<DoctorModel> _allDoctors = [
     DoctorModel(
@@ -138,7 +101,35 @@ class _HealthDirectoryScreenState extends State<HealthDirectoryScreen> {
     ),
   ];
 
-  // ── Filtered Lists ────────────────────────────────────────────────────────
+  @override
+  void initState() {
+    super.initState();
+    _loadHospitals();
+  }
+
+  Future<void> _loadHospitals() async {
+    setState(() {
+      _isLoadingHospitals = true;
+      _locationError = null;
+    });
+    try {
+      final position = await HospitalService.getCurrentLocation();
+      final hospitals = await HospitalService.getNearbyHospitals(
+        position.latitude,
+        position.longitude,
+      );
+      setState(() {
+        _allHospitals = hospitals;
+        _isLoadingHospitals = false;
+      });
+    } catch (e) {
+      print('LOAD HOSPITALS ERROR: $e');
+      setState(() {
+        _locationError = e.toString();
+        _isLoadingHospitals = false;
+      });
+    }
+  }
 
   List<HospitalModel> get _filteredHospitals {
     if (_searchQuery.isEmpty) return _allHospitals;
@@ -183,8 +174,6 @@ class _HealthDirectoryScreenState extends State<HealthDirectoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: background,
-
-      // ── AppBar ────────────────────────────────────────────────────────────
       appBar: AppBar(
         backgroundColor: background,
         elevation: 0,
@@ -206,49 +195,62 @@ class _HealthDirectoryScreenState extends State<HealthDirectoryScreen> {
         ),
         centerTitle: true,
       ),
-
-      // ── Body ──────────────────────────────────────────────────────────────
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 8),
-
-            // Search Bar
             SearchBarWidget(
               controller: _searchController,
               onChanged: (val) => setState(() => _searchQuery = val),
             ),
-
             const SizedBox(height: 16),
-
-            // Filter Chips
             FilterChipRow(
               options: _filterOptions,
               selected: _selectedFilter,
               onSelected: (val) => setState(() => _selectedFilter = val),
             ),
-
             const SizedBox(height: 18),
-
-            // List
             Expanded(child: _buildList()),
           ],
         ),
       ),
-
-      // ── Bottom Navigation ─────────────────────────────────────────────────
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 0),
     );
   }
 
-  // ── List Switcher ─────────────────────────────────────────────────────────
-
   Widget _buildList() {
     if (_selectedFilter == 'Hospitals') {
+      if (_isLoadingHospitals) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (_locationError != null) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.location_off, size: 52, color: Colors.grey),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  _locationError!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: textGrey, fontSize: 12),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: _loadHospitals,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        );
+      }
       final list = _filteredHospitals;
-      if (list.isEmpty) return _emptyState('No hospitals found');
+      if (list.isEmpty) return _emptyState('No hospitals found nearby');
       return ListView.builder(
         itemCount: list.length,
         padding: EdgeInsets.zero,
@@ -272,7 +274,6 @@ class _HealthDirectoryScreenState extends State<HealthDirectoryScreen> {
       );
     }
 
-    // Specialists
     final list = _filteredSpecialists;
     if (list.isEmpty) return _emptyState('No specialists found');
     return ListView.builder(
@@ -284,8 +285,6 @@ class _HealthDirectoryScreenState extends State<HealthDirectoryScreen> {
       ),
     );
   }
-
-  // ── Empty State ───────────────────────────────────────────────────────────
 
   Widget _emptyState(String message) {
     return Center(
@@ -304,13 +303,12 @@ class _HealthDirectoryScreenState extends State<HealthDirectoryScreen> {
     );
   }
 
-  // ── Navigation Callbacks (Step 4 will fill these) ────────────────────────
-
   void _onViewHospital(HospitalModel hospital) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => HospitalProfileScreen(hospital: hospital),
+        builder: (_) =>
+            HospitalProfileScreen(hospital: hospital, hospitalData: null),
       ),
     );
   }
@@ -320,11 +318,5 @@ class _HealthDirectoryScreenState extends State<HealthDirectoryScreen> {
       context,
       MaterialPageRoute(builder: (_) => DoctorProfileScreen(doctor: doctor)),
     );
-  }
-
-  // ── Bottom Navigation Bar ─────────────────────────────────────────────────
-
-  Widget _buildBottomNav() {
-    return const BottomNavBar(currentIndex: 0);
   }
 }

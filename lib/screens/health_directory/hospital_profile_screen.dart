@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../constant/app_colors.dart';
 import '../../models/hospital_model.dart';
 import '../../widgets/health_directory/share_modal_widget.dart';
@@ -6,14 +9,29 @@ import '../../widgets/health_directory/share_modal_widget.dart';
 class HospitalProfileScreen extends StatelessWidget {
   final HospitalModel hospital;
 
-  const HospitalProfileScreen({super.key, required this.hospital});
+  const HospitalProfileScreen({
+    super.key,
+    required this.hospital,
+    required hospitalData,
+  });
+
+  Future<void> _callHospital() async {
+    final uri = Uri(scheme: 'tel', path: hospital.phone);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final hasLocation =
+        hospital.lat != null &&
+        hospital.lng != null &&
+        hospital.lat != 0.0 &&
+        hospital.lng != 0.0;
+
     return Scaffold(
       backgroundColor: background,
-
-      // ── AppBar ────────────────────────────────────────────────────────────
       appBar: AppBar(
         backgroundColor: background,
         elevation: 0,
@@ -35,7 +53,6 @@ class HospitalProfileScreen extends StatelessWidget {
         ),
         centerTitle: true,
         actions: [
-          // Share Button
           GestureDetector(
             onTap: () => _showShareModal(context),
             child: Container(
@@ -65,7 +82,7 @@ class HospitalProfileScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 16),
 
-            // ── Header Card ─────────────────────────────────────────────────
+            // Header Card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -82,7 +99,6 @@ class HospitalProfileScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // Hospital Icon
                   Container(
                     width: 80,
                     height: 80,
@@ -97,8 +113,6 @@ class HospitalProfileScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 14),
-
-                  // Name
                   Text(
                     hospital.name,
                     textAlign: TextAlign.center,
@@ -109,8 +123,6 @@ class HospitalProfileScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-
-                  // Address
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -143,7 +155,55 @@ class HospitalProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // ── Contact Card ────────────────────────────────────────────────
+            // Map Card
+            if (hasLocation)
+              Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: FlutterMap(
+                    options: MapOptions(
+                      initialCenter: LatLng(hospital.lat!, hospital.lng!),
+                      initialZoom: 15,
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.auracare.app',
+                      ),
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: LatLng(hospital.lat!, hospital.lng!),
+                            width: 40,
+                            height: 40,
+                            child: Icon(
+                              Icons.location_pin,
+                              color: primary,
+                              size: 40,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: 16),
+
+            // Contact Card
             _sectionCard(
               title: 'Contact Information',
               child: Column(
@@ -151,13 +211,17 @@ class HospitalProfileScreen extends StatelessWidget {
                   _infoRow(
                     icon: Icons.phone_outlined,
                     label: 'Phone',
-                    value: hospital.phone,
+                    value: hospital.phone.isNotEmpty
+                        ? hospital.phone
+                        : 'Not available',
                   ),
                   const SizedBox(height: 12),
                   _infoRow(
                     icon: Icons.location_on_outlined,
                     label: 'Address',
-                    value: hospital.address,
+                    value: hospital.address.isNotEmpty
+                        ? hospital.address
+                        : 'Not available',
                   ),
                 ],
               ),
@@ -165,7 +229,7 @@ class HospitalProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // ── About Card ──────────────────────────────────────────────────
+            // About Card
             _sectionCard(
               title: 'About',
               child: Text(
@@ -178,9 +242,9 @@ class HospitalProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // ── Call Button ─────────────────────────────────────────────────
+            // Call Button
             GestureDetector(
-              onTap: () {},
+              onTap: _callHospital,
               child: Container(
                 width: double.infinity,
                 height: 52,
@@ -228,7 +292,6 @@ class HospitalProfileScreen extends StatelessWidget {
     );
   }
 
-  // ── Share Modal ───────────────────────────────────────────────────────────
   void _showShareModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -241,7 +304,6 @@ class HospitalProfileScreen extends StatelessWidget {
     );
   }
 
-  // ── Section Card ──────────────────────────────────────────────────────────
   Widget _sectionCard({required String title, required Widget child}) {
     return Container(
       width: double.infinity,
@@ -275,7 +337,6 @@ class HospitalProfileScreen extends StatelessWidget {
     );
   }
 
-  // ── Info Row ──────────────────────────────────────────────────────────────
   Widget _infoRow({
     required IconData icon,
     required String label,
