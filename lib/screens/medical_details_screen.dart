@@ -233,17 +233,18 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     return Scaffold(
       backgroundColor: background,
       appBar: AppBar(
-        backgroundColor: buttonStart,
+        backgroundColor: const Color(0xFFEAF4FB),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Medical Details',
           style: TextStyle(
-            color: Colors.white,
+            color: Colors.black87,
             fontWeight: FontWeight.bold,
+              fontSize: 18,
           ),
         ),
         centerTitle: true,
@@ -272,7 +273,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
             child: Text(
               isEditing ? 'Save' : 'Edit',
               style: const TextStyle(
-                color: Colors.white,
+                color: Colors.black87,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),

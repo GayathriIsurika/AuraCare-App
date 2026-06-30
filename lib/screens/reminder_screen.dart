@@ -386,18 +386,18 @@ class _ReminderScreenState extends State<ReminderScreen> {
                       children: [
                         Text(
                           (user?.firstName.isNotEmpty ?? false)
-                              ? "Hello, ${user!.firstName}"
+                              ? "Hello, ${user!.firstName}!"
                               : "Hello",
                           style: const TextStyle(
-                            fontSize: 32,
+                            fontSize: 26,
                             fontWeight: FontWeight.bold,
-                            color: textBlue,
+                            color: Colors.black87,
                           ),
                         ),
                         const SizedBox(height: 5),
                         const Text(
                           "Your health schedule for today",
-                          style: TextStyle(fontSize: 16, color: textGrey),
+                          style: TextStyle(fontSize: 14, color: textGrey),
                         ),
                       ],
                     ),
