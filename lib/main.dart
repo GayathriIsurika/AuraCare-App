@@ -17,6 +17,7 @@ import 'package:auracare_app/screens/splash_screen.dart';
 import 'package:auracare_app/screens/pin_entry_screen.dart';
 import 'package:auracare_app/screens/set_pin_screen.dart';
 import 'package:auracare_app/firebase_options.dart';
+import 'package:auracare_app/screens/email_verification_wait_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

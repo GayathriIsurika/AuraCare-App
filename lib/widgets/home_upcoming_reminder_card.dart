@@ -31,7 +31,7 @@ class HomeUpcomingCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'All Reminders Complete! ✅',
+                  'All Reminders Complete!',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                 ),
                 SizedBox(height: 4),

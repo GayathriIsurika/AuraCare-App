@@ -20,7 +20,7 @@ class FirebaseService {
       if (googleUser == null) return 'Sign in cancelled';
 
       final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      await googleUser.authentication;
 
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -50,7 +50,6 @@ class FirebaseService {
       return e.toString();
     }
   }
-
   // AUTH METHODS
 
   Future<String?> signUp({
@@ -64,18 +63,23 @@ class FirebaseService {
         password: password,
       );
 
-      await _firestore.collection('users').doc(result.user!.uid).set({
-        'fullName': fullName,
-        'email': email,
-        'uid': result.user!.uid,
-        'createdAt': DateTime.now().toIso8601String(),
-        'profileImageUrl': '',
-        'username': '',
-        'phone': '',
-        'location': '',
-        'dateOfBirth': '',
-        'gender': '',
-      });
+      try {
+        await _firestore.collection('users').doc(result.user!.uid).set({
+          'fullName': fullName,
+          'email': email,
+          'uid': result.user!.uid,
+          'createdAt': DateTime.now().toIso8601String(),
+          'profileImageUrl': '',
+          'username': '',
+          'phone': '',
+          'location': '',
+          'dateOfBirth': '',
+          'gender': '',
+          'emailVerified': false,
+        });
+      } catch (firestoreError) {
+        // Firestore save failed document will be created on next login
+      }
 
       return null;
     } on FirebaseAuthException catch (e) {
@@ -88,7 +92,15 @@ class FirebaseService {
     required String password,
   }) async {
     try {
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      UserCredential result = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (result.user != null) {
+        await _ensureUserDocumentExists(result.user!);
+      }
+
       return null;
     } on FirebaseAuthException catch (e) {
       return e.message;
@@ -98,6 +110,135 @@ class FirebaseService {
   Future<void> logout() async {
     await _googleSignIn.signOut();
     await _auth.signOut();
+  }
+
+  //  Create user document if missing
+  Future<void> _ensureUserDocumentExists(User user) async {
+    try {
+      DocumentSnapshot doc = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (!doc.exists) {
+        await _firestore.collection('users').doc(user.uid).set({
+          'fullName': user.displayName ?? '',
+          'email': user.email ?? '',
+          'uid': user.uid,
+          'createdAt': DateTime.now().toIso8601String(),
+          'profileImageUrl': '',
+          'username': '',
+          'phone': '',
+          'location': '',
+          'dateOfBirth': '',
+          'gender': '',
+          'emailVerified': false,
+        });
+      }
+    } catch (e) {
+      // silently fail — don't block login
+    }
+  }
+
+
+  // EMAIL VERIFICATION METHODS
+
+  // Create account + send verification email
+  Future<String?> createAccountAndSendVerification({
+    required String email,
+    required String password,
+    required String fullName,
+  }) async {
+    try {
+      UserCredential result = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // Save user data to Firestore
+      await _firestore.collection('users').doc(result.user!.uid).set({
+        'fullName': fullName,
+        'email': email,
+        'uid': result.user!.uid,
+        'createdAt': DateTime.now().toIso8601String(),
+        'profileImageUrl': '',
+        'username': '',
+        'phone': '',
+        'location': '',
+        'dateOfBirth': '',
+        'gender': '',
+        'emailVerified': false,
+      });
+
+      // Send Firebase verification email
+      await result.user!.sendEmailVerification();
+
+      return null;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'email-already-in-use') {
+        try {
+          // ← Account exists — try to sign in and resend
+          final existing = await _auth.signInWithEmailAndPassword(
+            email: email,
+            password: password,
+          );
+          if (!existing.user!.emailVerified) {
+            await existing.user!.sendEmailVerification();
+            return null;
+          } else {
+            return 'already-verified';
+          }
+        } catch (_) {
+          return 'This email is already registered.';
+        }
+      }
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  // Check if current user email is verified
+  Future<bool> isEmailVerified() async {
+    try {
+      // Reload to get latest status from Firebase
+      await _auth.currentUser?.reload();
+      return _auth.currentUser?.emailVerified ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  //  Resend verification email
+  Future<String?> resendVerificationEmail() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return 'No user found';
+      if (user.emailVerified) return 'already-verified';
+      await user.sendEmailVerification();
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  // Delete unverified account
+  // Called when user goes back from verification screen
+  Future<void> deleteUnverifiedAccount() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null && !user.emailVerified) {
+        // Delete Firestore data first
+        await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .delete();
+        // Delete the auth account
+        await user.delete();
+      }
+    } catch (e) {
+      // silently fail
+    }
   }
 
   // USER PROFILE METHODS
@@ -148,7 +289,7 @@ class FirebaseService {
     }
   }
 
-  // ── Update only the user's name ──
+  // Update only the user's name
   Future<String?> updateUserName(String fullName) async {
     try {
       if (currentUser == null) return 'User not logged in';
@@ -162,23 +303,20 @@ class FirebaseService {
     }
   }
 
-  // ── Upload profile image using Cloudinary ──
+  // Upload profile image using Cloudinary
   Future<String?> uploadProfileImage(File imageFile) async {
     try {
       if (currentUser == null) return null;
 
-      // Upload to Cloudinary
       String? imageUrl = await _cloudinaryService.uploadProfileImage(
         imageFile,
-        currentUser!.uid, // ← user ID for unique filename
+        currentUser!.uid,
       );
 
       if (imageUrl != null) {
-        // Save URL to Firestore
         await _firestore.collection('users').doc(currentUser!.uid).update({
           'profileImageUrl': imageUrl,
         });
-
         return imageUrl;
       }
       return null;
@@ -205,14 +343,14 @@ class FirebaseService {
           .collection('medical')
           .doc('details')
           .set({
-            'bloodType': bloodType,
-            'weight': weight,
-            'height': height,
-            'allergies': allergies,
-            'conditions': conditions,
-            'healthEvents': healthEvents,
-            'updatedAt': DateTime.now().toIso8601String(),
-          });
+        'bloodType': bloodType,
+        'weight': weight,
+        'height': height,
+        'allergies': allergies,
+        'conditions': conditions,
+        'healthEvents': healthEvents,
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
       return null;
     } catch (e) {
       return e.toString();
@@ -312,7 +450,7 @@ class FirebaseService {
         .replaceAll('_', ' ')
         .replaceAll('-', ' ');
 
-    // ── Imaging keywords ──────────────────────────────
+    // Imaging keywords
     const imagingKeywords = [
       'xray',
       'x ray',
@@ -344,7 +482,7 @@ class FirebaseService {
       'nuclear',
     ];
 
-    // ── Vaccine keywords ──────────────────────────────
+    // Vaccine keywords
     const vaccineKeywords = [
       'vaccine',
       'vaccination',
@@ -370,7 +508,7 @@ class FirebaseService {
       'inoculation',
     ];
 
-    // ── Consultation keywords ─────────────────────────
+    // Consultation keywords
     const consultationKeywords = [
       'prescription',
       'doctor',
@@ -404,7 +542,7 @@ class FirebaseService {
       'ipd',
     ];
 
-    // ── Lab keywords ──────────────────────────────────
+    // Lab keywords
     const labKeywords = [
       'blood',
       'urine',
@@ -457,7 +595,7 @@ class FirebaseService {
       'kft',
     ];
 
-    // ── Check in priority order ───────────────────────
+    //  Check in priority order
     // Check imaging first (most specific)
     for (final keyword in imagingKeywords) {
       if (name.contains(keyword)) return 'imaging';
@@ -475,7 +613,7 @@ class FirebaseService {
     return 'other'; // default
   }
 
-  // ── REMINDER METHODS ──
+  //  REMINDER METHODS
 
   Future<String?> saveReminder({
     required String name,
