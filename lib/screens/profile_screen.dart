@@ -4,6 +4,7 @@ import 'package:auracare_app/constant/app_colors.dart';
 import 'package:auracare_app/screens/edit_profile_screen.dart';
 import 'package:auracare_app/screens/medical_details_screen.dart';
 import 'package:auracare_app/services/firebase_service.dart';
+import 'package:auracare_app/services/pin_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,6 +15,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final FirebaseService _firebaseService = FirebaseService();
+  final PinService _pinService = PinService();
 
   // Stores user data loaded from Firebase
   Map<String, dynamic>? _userData;
@@ -351,17 +353,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Center(
               child: TextButton.icon(
                 onPressed: () async {
-                  await _firebaseService.logout(); // ← Firebase logout
-                  Navigator.pushNamedAndRemoveUntil(
-                    context, '/signup',
-                        (route) => false,
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      title: const Text('Log Out'),
+                      content: const Text(
+                        'Are you sure you want to log out?\n\nNext time you sign in with the same email, you will need to verify it again.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text(
+                            'Log Out',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
                   );
+
+                  if (confirm != true) return;
+
+                  await _pinService.deletePin();
+
+                  await _firebaseService.logout();
+
+                  if (mounted) {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/signup',
+                          (route) => false,
+                    );
+                  }
                 },
-                icon: const Icon(
-                  Icons.logout,
-                  color: Colors.red,
-                  size: 25,
-                ),
+                icon: const Icon(Icons.logout, color: Colors.red, size: 25),
                 label: const Text(
                   'Log out',
                   style: TextStyle(color: Colors.red, fontSize: 20),

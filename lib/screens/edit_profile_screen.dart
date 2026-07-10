@@ -176,7 +176,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   },
                 ),
 
-                if (_profileImage != null)
+                if (_profileImage != null || _existingProfileImageUrl.isNotEmpty)
                   ListTile(
                     leading: const CircleAvatar(
                       backgroundColor: Color(0xFFFFEBEB),
@@ -186,11 +186,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       'Remove Photo',
                       style: TextStyle(color: Colors.red),
                     ),
-                    onTap: () {
+                    onTap: () async {
                       Navigator.pop(context);
-                      setState(() => _profileImage = null);
-                    },
-                  ),
+                      setState(() {
+                        _profileImage = null;
+                        _existingProfileImageUrl = '';
+                      });
+                      await _firebaseService.updateUserProfile(
+                        firstName: _firstNameController.text.trim(),
+                        lastName: _lastNameController.text.trim(),
+                        username: _usernameController.text.trim(),
+                        phone: '$_selectedCountryCode${_phoneController.text
+                            .trim()}',
+                        location: _locationController.text.trim(),
+                        dateOfBirth: '',
+                        gender: _selectedGender ?? '',
+                        bloodGroup: '',
+                      );
+                    },        ),
               ],
             ),
           ),
@@ -203,10 +216,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _saveProfile() async {
     setState(() => _isLoading = true);
 
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
     try {
       // Upload image if new one was picked
       if (_profileImage != null) {
+        final uploadedUrl =
         await _firebaseService.uploadProfileImage(_profileImage!);
+
+        if (uploadedUrl != null) {
+          setState(() => _existingProfileImageUrl = uploadedUrl);
+        }
       }
 
 
