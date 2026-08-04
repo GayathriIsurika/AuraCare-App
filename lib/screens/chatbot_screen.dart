@@ -1,3 +1,4 @@
+import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter/material.dart';
 import '../models/chat_message_model.dart';
 import '../constant/app_colors.dart';
@@ -160,6 +161,35 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       body: _chatStarted ? _buildChatView() : _buildWelcomeView(),
       bottomNavigationBar: _buildBottomBar(),
     );
+  }
+
+  Future<void> generateReportSummary(String ocrText) async {
+    // 1. Put your actual Gemini API key inside these quotes
+    const apiKey = AQ.Ab8RN6Ky86YOt3H7mLk - BjUZjg0gS9Sm5VqbmTLbmmJC7oE4EQ;
+
+    if (apiKey.isEmpty) {
+      print('API Key is missing.');
+      return;
+    }
+
+    // 2. Set up the Gemini model
+    final model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: apiKey);
+
+    try {
+      // 3. Give Gemini its instructions and the medical text
+      final prompt =
+          'You are a medical assistant. Summarize the following medical report in simple, easy-to-understand language for a patient:\n\n$ocrText';
+      final content = [Content.text(prompt)];
+
+      // 4. Wait for Gemini to reply
+      final response = await model.generateContent(content);
+
+      // 5. Print the result
+      final summaryText = response.text;
+      print("AI Summary: $summaryText");
+    } catch (e) {
+      print("AI API Error: $e");
+    }
   }
 
   // Welcome screen
