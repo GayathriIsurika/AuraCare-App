@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Map icon codePoint ↔ FaIconData for Firestore storage
 const List<FaIconData> _allIcons = [
-  FontAwesomeIcons.ambulance,
+  FontAwesomeIcons.truckMedical,
   FontAwesomeIcons.userDoctor,
   FontAwesomeIcons.userNurse,
   FontAwesomeIcons.house,

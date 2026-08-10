@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class EmergencySosScreen extends StatefulWidget {
   const EmergencySosScreen({super.key});
@@ -70,7 +71,7 @@ class _EmergencySosScreenState extends State<EmergencySosScreen> {
       await _emergencyDocRef.set({
         'name': 'Emergency',
         'phoneNumber': '1990',
-        'iconCodePoint': FontAwesomeIcons.ambulance.codePoint,
+        'iconCodePoint': FontAwesomeIcons.truckMedical.codePoint,
         'isFixed': true,
       });
     }
@@ -102,6 +103,60 @@ class _EmergencySosScreenState extends State<EmergencySosScreen> {
   // ── Delete contact ──
   Future<void> _deleteContact(String id) async {
     await _contactsRef.doc(id).delete();
+  }
+
+  // ── Make phone call / open dialer ──
+  Future<void> _makeCall(String phoneNumber) async {
+    final trimmed = phoneNumber.trim();
+    if (trimmed.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No phone number provided.')),
+        );
+      }
+      return;
+    }
+
+    final cleaned = trimmed.replaceAll(RegExp(r'[^\d+]'), '');
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: cleaned.isNotEmpty ? cleaned : trimmed,
+    );
+
+    try {
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri);
+      } else {
+        await launchUrl(launchUri);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open phone dialer for $phoneNumber'),
+          ),
+        );
+      }
+    }
+  }
+
+  // ── Handle SOS button press ──
+  Future<void> _handleSosPressed() async {
+    try {
+      final doc = await _emergencyDocRef.get();
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data() as Map<String, dynamic>;
+        final phone = data['phoneNumber'] as String?;
+        if (phone != null && phone.trim().isNotEmpty) {
+          await _makeCall(phone);
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting emergency doc: $e');
+    }
+    // Fallback to 1990
+    await _makeCall('1990');
   }
 
   // ── Open add/edit sheet ──
@@ -238,7 +293,7 @@ class _EmergencySosScreenState extends State<EmergencySosScreen> {
                       children: [
                         const SizedBox(height: 60),
 
-                        SosButton(onPressed: () {}),
+                        SosButton(onPressed: _handleSosPressed),
                         const SizedBox(height: 40),
 
                         // ── Header row ──
@@ -345,7 +400,7 @@ class _EmergencySosScreenState extends State<EmergencySosScreen> {
                                 return ContactCard(
                                   contact: c,
                                   isFixed: c.id == 'emergency_fixed',
-                                  onCall: () {},
+                                  onCall: () => _makeCall(c.phoneNumber),
                                   onEdit: () => _openContactSheet(existing: c),
                                   onDelete: () => _deleteContact(c.id),
                                 );
