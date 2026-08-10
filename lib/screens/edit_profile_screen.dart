@@ -84,6 +84,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  String _getInitials() {
+    final first = _firstNameController.text.trim();
+    final last = _lastNameController.text.trim();
+    if (first.isNotEmpty && last.isNotEmpty) {
+      return '${first[0]}${last[0]}'.toUpperCase();
+    } else if (first.isNotEmpty) {
+      return first[0].toUpperCase();
+    } else if (last.isNotEmpty) {
+      return last[0].toUpperCase();
+    }
+    return '?';
+  }
+
   @override
   void dispose() {
     _firstNameController.dispose();
@@ -215,9 +228,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   // Save profile to Firebase
   Future<void> _saveProfile() async {
     setState(() => _isLoading = true);
-
-    final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
 
     try {
       // Upload image if new one was picked
@@ -355,11 +365,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               ? NetworkImage(_existingProfileImageUrl)
                               : null,
                           child: _profileImage == null && _existingProfileImageUrl.isEmpty
-                              ? const Icon(
-                            Icons.person,
-                            color: Colors.white,
-                            size: 40,
-                          )
+                              ? Text(
+                                  _getInitials(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 28,
+                                  ),
+                                )
                               : null,
                         ),
                         Positioned(

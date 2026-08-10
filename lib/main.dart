@@ -17,7 +17,6 @@ import 'package:auracare_app/screens/splash_screen.dart';
 import 'package:auracare_app/screens/pin_entry_screen.dart';
 import 'package:auracare_app/screens/set_pin_screen.dart';
 import 'package:auracare_app/firebase_options.dart';
-import 'package:auracare_app/screens/email_verification_wait_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,7 +52,7 @@ class MyApp extends StatelessWidget {
         '/medical-details': (context) => MedicalDetailsScreen(),
         '/upload': (context) => const UploadReportScreen(),
         '/nearby': (context) =>
-        const PlaceholderScreen(title: 'Nearby Hospital'),
+            const PlaceholderScreen(title: 'Nearby Hospital'),
         '/ask_aura': (context) => const PlaceholderScreen(title: 'Ask Aura'),
         '/profile': (context) => const ProfileScreen(),
         '/hospital': (context) => const HealthDirectoryScreen(),

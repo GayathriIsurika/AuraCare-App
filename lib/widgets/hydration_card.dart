@@ -58,7 +58,7 @@ class HydrationCard extends StatelessWidget {
           Switch(
             value: enabled,
             onChanged: onToggle,
-            activeColor: Colors.white,
+            activeThumbColor: Colors.white,
             activeTrackColor: Colors.white.withValues(alpha: 0.5),
             inactiveThumbColor: Colors.white,
             inactiveTrackColor: Colors.white24,

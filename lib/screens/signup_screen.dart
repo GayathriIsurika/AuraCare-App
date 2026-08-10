@@ -32,6 +32,7 @@ class _SignupScreenState extends State<SignupScreen> {
     _emailController.dispose();
     super.dispose();
   }
+
   // Validate then create account + send verification
   Future<void> _goToSetPin() async {
     final email = _emailController.text.trim();
@@ -100,7 +101,7 @@ class _SignupScreenState extends State<SignupScreen> {
       setState(() => _currentStep = 2);
     } else {
       messenger.showSnackBar(
-        SnackBar(content: Text(error!), backgroundColor: Colors.red),
+        SnackBar(content: Text(error), backgroundColor: Colors.red),
       );
     }
   }
@@ -141,8 +142,9 @@ class _SignupScreenState extends State<SignupScreen> {
       }
     });
   }
+
   //Final signup: set PIN and go home
-// Called AFTER email is verified
+  // Called AFTER email is verified
   Future<void> _completeSignup() async {
     if (_pin != _confirmPin) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -194,11 +196,7 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: background,
-      body: SafeArea(
-        child: _currentStep == 1
-            ? _buildStep1()
-            : _buildStep2(),
-      ),
+      body: SafeArea(child: _currentStep == 1 ? _buildStep1() : _buildStep2()),
     );
   }
 
@@ -211,10 +209,7 @@ class _SignupScreenState extends State<SignupScreen> {
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 28,
-                vertical: 36,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(28),
@@ -228,7 +223,6 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               child: Column(
                 children: [
-
                   // Logo
                   Image.asset(
                     'assets/images/auracare_logo.png',
@@ -273,9 +267,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                   ),
 
@@ -297,9 +289,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                   ),
 
@@ -334,9 +324,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   //Divider
                   Row(
                     children: [
-                      Expanded(
-                        child: Divider(color: Colors.grey.shade300),
-                      ),
+                      Expanded(child: Divider(color: Colors.grey.shade300)),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text(
@@ -347,9 +335,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                         ),
                       ),
-                      Expanded(
-                        child: Divider(color: Colors.grey.shade300),
-                      ),
+                      Expanded(child: Divider(color: Colors.grey.shade300)),
                     ],
                   ),
 
@@ -360,22 +346,21 @@ class _SignupScreenState extends State<SignupScreen> {
                     width: double.infinity,
                     height: 52,
                     child: OutlinedButton.icon(
-                      onPressed:
-                      _isGoogleLoading ? null : _signUpWithGoogle,
+                      onPressed: _isGoogleLoading ? null : _signUpWithGoogle,
                       icon: _isGoogleLoading
                           ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: buttonStart,
-                        ),
-                      )
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: buttonStart,
+                              ),
+                            )
                           : Image.asset(
-                        'assets/images/google_icon.png',
-                        width: 22,
-                        height: 22,
-                      ),
+                              'assets/images/google_icon.png',
+                              width: 22,
+                              height: 22,
+                            ),
                       label: const Text(
                         'Continue with Google',
                         style: TextStyle(
@@ -408,7 +393,6 @@ class _SignupScreenState extends State<SignupScreen> {
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-
           const SizedBox(height: 40),
 
           //Lock icon
@@ -464,8 +448,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   shape: BoxShape.circle,
                   color: isFilled ? buttonStart : Colors.grey.shade300,
                   border: Border.all(
-                    color:
-                    isFilled ? buttonStart : Colors.grey.shade400,
+                    color: isFilled ? buttonStart : Colors.grey.shade400,
                     width: 2,
                   ),
                 ),
