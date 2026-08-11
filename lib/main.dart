@@ -17,9 +17,11 @@ import 'package:auracare_app/screens/splash_screen.dart';
 import 'package:auracare_app/screens/pin_entry_screen.dart';
 import 'package:auracare_app/screens/set_pin_screen.dart';
 import 'package:auracare_app/firebase_options.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
