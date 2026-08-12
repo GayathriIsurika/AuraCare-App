@@ -42,6 +42,7 @@ dependencies:
   google_generative_ai: ^0.4.7
   flutter_dotenv: ^5.1.0
   flutter_markdown: ^0.7.4+1
+  flutter_markdown_plus: ^1.0.3
   # ── Firebase ──────────────────────────────
   firebase_core: ^4.9.0          # ← required for all Firebase
   firebase_auth: ^6.5.1          # ← for login/signup

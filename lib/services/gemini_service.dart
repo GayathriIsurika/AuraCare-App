@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -6,6 +7,10 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class GeminiService {
   late final GenerativeModel _model;
   late ChatSession _chat;
+
+  // Separate model for one-shot document summarization — this does NOT use
+  // chat history, since each report summary is an independent request.
+  late final GenerativeModel _reportModel;
 
   GeminiService() {
     final apiKey = dotenv.env['GEMINI_API_KEY'];
@@ -53,6 +58,47 @@ class GeminiService {
     );
 
     _chat = _model.startChat();
+
+    _reportModel = GenerativeModel(
+      model: 'gemini-flash-latest',
+      apiKey: apiKey,
+      systemInstruction: Content.system(
+        'You are AuraCare\'s medical report reader. You will be given a '
+            'photo or PDF of a medical report, lab result, prescription, or '
+            'imaging summary. Read the document carefully and produce a clear, '
+            'patient-friendly summary using this exact Markdown structure:\n\n'
+            '### 📋 Overview\n'
+            'One or two sentences on what kind of report this is and when it '
+            'appears to be from (if a date is visible).\n\n'
+            '### 🔍 Key Findings\n'
+            '- Bullet each important result, value, or diagnosis found in the '
+            'document\n'
+            '- Note if a value is flagged high/low/abnormal in the original '
+            'report\n\n'
+            '### 💬 In Simple Terms\n'
+            'Explain the key findings in plain, everyday language a non-medical '
+            'person can understand. Avoid unexplained jargon — if you must use '
+            'a medical term, briefly define it in parentheses.\n\n'
+            '### ✅ Suggested Next Steps\n'
+            '- 1-3 short, general suggestions (e.g. "discuss this result with '
+            'your doctor", "no action needed if you feel well", etc.)\n\n'
+            'Rules:\n'
+            '- Base your summary ONLY on what is actually visible in the '
+            'document. Never invent values, names, or results that are not '
+            'present.\n'
+            '- If the document is unreadable, blurry, cropped, or not a '
+            'medical report at all, say so clearly instead of guessing.\n'
+            '- Always end with a short one-line reminder that this is an AI '
+            'summary and the original report should be reviewed with a '
+            'licensed doctor for medical decisions.\n'
+            '- Do not diagnose new conditions beyond what is written in the '
+            'report — only explain what is already there.',
+      ),
+      generationConfig: GenerationConfig(
+        temperature: 0.3, // lower temperature: prioritize accuracy over creativity
+        maxOutputTokens: 1024,
+      ),
+    );
   }
 
   /// Sends a message and returns Gemini's reply as plain text.
@@ -75,5 +121,51 @@ class GeminiService {
   /// Clears conversation history and starts a fresh chat session.
   void resetChat() {
     _chat = _model.startChat();
+  }
+
+  /// Sends a medical report (PDF or image) to Gemini and returns a
+  /// structured, plain-language Markdown summary.
+  ///
+  /// [bytes] — raw file bytes (from file_picker, Firebase download, etc.)
+  /// [mimeType] — e.g. 'application/pdf', 'image/jpeg', 'image/png'
+  ///
+  /// Never throws — returns a user-friendly error string on failure.
+  Future<String> summarizeDocument({
+    required Uint8List bytes,
+    required String mimeType,
+  }) async {
+    // Gemini's inline data limit is ~20MB per request.
+    const maxBytes = 20 * 1024 * 1024;
+    if (bytes.length > maxBytes) {
+      return "⚠️ This file is too large to summarize (over 20MB). "
+          "Please try a smaller file or a lower-resolution scan.";
+    }
+
+    try {
+      final content = [
+        Content.multi([
+          TextPart(
+            'Please read this medical report and summarize it following '
+                'your instructions.',
+          ),
+          DataPart(mimeType, bytes),
+        ]),
+      ];
+
+      final response = await _reportModel.generateContent(content);
+      final text = response.text;
+
+      if (text == null || text.trim().isEmpty) {
+        return "I couldn't read anything useful from this file. Please "
+            "make sure it's a clear photo or PDF of the report and try again.";
+      }
+      return text.trim();
+    } on GenerativeAIException catch (e) {
+      return "AuraCare couldn't process this document right now (${e.message}). "
+          "Please try again in a moment.";
+    } catch (e) {
+      return "Something went wrong while reading this document. Please "
+          "check your connection and try again.";
+    }
   }
 }
