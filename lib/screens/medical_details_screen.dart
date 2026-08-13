@@ -10,7 +10,6 @@ class MedicalDetailsScreen extends StatefulWidget {
 }
 
 class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
-
   final FirebaseService _firebaseService = FirebaseService();
 
   // Stored medical data
@@ -50,25 +49,26 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     if (bmi < 30) return Colors.orange;
     return Colors.red;
   }
+
   // ideal BMI range based on age
   String get idealBmiRange {
     // For adults (18+) standard range is 18.5 - 24.9
     return '18.5 - 24.9';
   }
 
-//Calculate minimum weight for normal BMI
+  //Calculate minimum weight for normal BMI
   double get minNormalWeight {
     final heightInMeters = height / 100;
     return 18.5 * (heightInMeters * heightInMeters);
   }
 
-//Calculate maximum weight for normal BMI
+  //Calculate maximum weight for normal BMI
   double get maxNormalWeight {
     final heightInMeters = height / 100;
     return 24.9 * (heightInMeters * heightInMeters);
   }
 
-// Weight difference from ideal range
+  // Weight difference from ideal range
   double get weightDifference {
     if (bmi < 18.5) {
       // Underweight: how much to gain
@@ -80,7 +80,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     return 0; // Normal
   }
 
-// ── BMI advice based on category ──
+  // ── BMI advice based on category ──
   String get bmiAdvice {
     switch (bmiCategory) {
       case 'Underweight':
@@ -96,7 +96,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     }
   }
 
-// ── Tips based on BMI category ──
+  // ── Tips based on BMI category ──
   List<String> get bmiTips {
     switch (bmiCategory) {
       case 'Underweight':
@@ -173,7 +173,6 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
         conditions = List<String>.from(data['conditions'] ?? []);
         healthEvents = List<String>.from(data['healthEvents'] ?? []);
 
-
         _weightController.text = weight.toString();
         _heightController.text = height.toString();
 
@@ -219,10 +218,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
       } else {
         // Error message
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $error'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $error'), backgroundColor: Colors.red),
         );
       }
     }
@@ -244,212 +240,203 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
           style: TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.bold,
-              fontSize: 18,
+            fontSize: 18,
           ),
         ),
         centerTitle: true,
         actions: [
-
           _isSaving
               ? const Padding(
-            padding: EdgeInsets.all(16),
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
-              ),
-            ),
-          )
+                  padding: EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                )
               : TextButton(
-            onPressed: () {
-              if (isEditing) {
-                _saveMedicalData();
-              } else {
-                setState(() => isEditing = true);
-              }
-            },
-            child: Text(
-              isEditing ? 'Save' : 'Edit',
-              style: const TextStyle(
-                color: Colors.black87,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ),
+                  onPressed: () {
+                    if (isEditing) {
+                      _saveMedicalData();
+                    } else {
+                      setState(() => isEditing = true);
+                    }
+                  },
+                  child: Text(
+                    isEditing ? 'Save' : 'Edit',
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
         ],
       ),
 
       body: _isLoading
-          ? const Center(
-        child: CircularProgressIndicator(
-          color: buttonStart,
-        ),
-      )
+          ? const Center(child: CircularProgressIndicator(color: buttonStart))
           : SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-            //  Blood Type , BMI
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    icon: Icons.water_drop_rounded,
-                    iconColor: Colors.red,
-                    iconBg: const Color(0xFFFFEBEE),
-                    title: 'Blood Type',
-                    value: bloodType,
-                    isEditing: isEditing,
-                    onEdit: () => _showBloodTypeDialog(),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  //  Blood Type , BMI
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          icon: Icons.water_drop_rounded,
+                          iconColor: Colors.red,
+                          iconBg: const Color(0xFFFFEBEE),
+                          title: 'Blood Type',
+                          value: bloodType,
+                          isEditing: isEditing,
+                          onEdit: () => _showBloodTypeDialog(),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildBMICard()),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(child: _buildBMICard()),
-              ],
-            ),
 
+                  const SizedBox(height: 12),
 
-            const SizedBox(height: 12),
-
-            // Weight , Height
-            Row(
-              children: [
-                Expanded(
-                  child: _buildMeasurementCard(
-                    icon: Icons.monitor_weight_outlined,
-                    iconColor: Colors.purple,
-                    iconBg: const Color(0xFFF3E5F5),
-                    title: 'Weight',
-                    controller: _weightController,
-                    unit: 'kg',
-                    isEditing: isEditing,
+                  // Weight , Height
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildMeasurementCard(
+                          icon: Icons.monitor_weight_outlined,
+                          iconColor: Colors.purple,
+                          iconBg: const Color(0xFFF3E5F5),
+                          title: 'Weight',
+                          controller: _weightController,
+                          unit: 'kg',
+                          isEditing: isEditing,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildMeasurementCard(
+                          icon: Icons.height_rounded,
+                          iconColor: Colors.teal,
+                          iconBg: const Color(0xFFE0F2F1),
+                          title: 'Height',
+                          controller: _heightController,
+                          unit: 'cm',
+                          isEditing: isEditing,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildMeasurementCard(
-                    icon: Icons.height_rounded,
-                    iconColor: Colors.teal,
-                    iconBg: const Color(0xFFE0F2F1),
-                    title: 'Height',
-                    controller: _heightController,
-                    unit: 'cm',
-                    isEditing: isEditing,
+                  const SizedBox(height: 16),
+
+                  _buildBMIAnalysisCard(),
+
+                  const SizedBox(height: 24),
+
+                  //  Allergies
+                  _buildSectionTitle(
+                    'Allergies',
+                    Icons.warning_amber_rounded,
+                    Colors.orange,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+                  const SizedBox(height: 12),
+                  _buildChipSection(
+                    items: allergies,
+                    chipColor: const Color(0xFFFFF3E0),
+                    textColor: Colors.orange,
+                    borderColor: Colors.orange.shade200,
+                    onRemove: isEditing
+                        ? (item) => setState(() => allergies.remove(item))
+                        : null,
+                  ),
+                  if (isEditing) ...[
+                    const SizedBox(height: 8),
+                    _buildAddItemRow(
+                      controller: _newAllergyController,
+                      hint: 'Add allergy...',
+                      onAdd: () {
+                        if (_newAllergyController.text.trim().isNotEmpty) {
+                          setState(() {
+                            allergies.add(_newAllergyController.text.trim());
+                            _newAllergyController.clear();
+                          });
+                        }
+                      },
+                    ),
+                  ],
 
-            _buildBMIAnalysisCard(),
+                  const SizedBox(height: 24),
 
-            const SizedBox(height: 24),
+                  // Medical Conditions
+                  _buildSectionTitle(
+                    'Medical Conditions',
+                    Icons.medical_services_outlined,
+                    Colors.blue,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildChipSection(
+                    items: conditions,
+                    chipColor: const Color(0xFFE3F2FD),
+                    textColor: Colors.blue,
+                    borderColor: Colors.blue.shade200,
+                    onRemove: isEditing
+                        ? (item) => setState(() => conditions.remove(item))
+                        : null,
+                  ),
+                  if (isEditing) ...[
+                    const SizedBox(height: 8),
+                    _buildAddItemRow(
+                      controller: _newConditionController,
+                      hint: 'Add condition...',
+                      onAdd: () {
+                        if (_newConditionController.text.trim().isNotEmpty) {
+                          setState(() {
+                            conditions.add(_newConditionController.text.trim());
+                            _newConditionController.clear();
+                          });
+                        }
+                      },
+                    ),
+                  ],
 
-            //  Allergies
-            _buildSectionTitle(
-              'Allergies',
-              Icons.warning_amber_rounded,
-              Colors.orange,
-            ),
-            const SizedBox(height: 12),
-            _buildChipSection(
-              items: allergies,
-              chipColor: const Color(0xFFFFF3E0),
-              textColor: Colors.orange,
-              borderColor: Colors.orange.shade200,
-              onRemove: isEditing
-                  ? (item) => setState(() => allergies.remove(item))
-                  : null,
-            ),
-            if (isEditing) ...[
-              const SizedBox(height: 8),
-              _buildAddItemRow(
-                controller: _newAllergyController,
-                hint: 'Add allergy...',
-                onAdd: () {
-                  if (_newAllergyController.text.trim().isNotEmpty) {
-                    setState(() {
-                      allergies.add(_newAllergyController.text.trim());
-                      _newAllergyController.clear();
-                    });
-                  }
-                },
+                  const SizedBox(height: 24),
+
+                  // Health Events
+                  _buildSectionTitle(
+                    'Significant Health Events',
+                    Icons.event_note_outlined,
+                    Colors.purple,
+                  ),
+                  const SizedBox(height: 12),
+                  ...healthEvents.asMap().entries.map((entry) {
+                    return _buildEventCard(entry.value, entry.key);
+                  }),
+                  if (isEditing) ...[
+                    const SizedBox(height: 8),
+                    _buildAddItemRow(
+                      controller: _newEventController,
+                      hint: 'Add health event...',
+                      onAdd: () {
+                        if (_newEventController.text.trim().isNotEmpty) {
+                          setState(() {
+                            healthEvents.add(_newEventController.text.trim());
+                            _newEventController.clear();
+                          });
+                        }
+                      },
+                    ),
+                  ],
+
+                  const SizedBox(height: 32),
+                ],
               ),
-            ],
-
-            const SizedBox(height: 24),
-
-            // Medical Conditions
-            _buildSectionTitle(
-              'Medical Conditions',
-              Icons.medical_services_outlined,
-              Colors.blue,
             ),
-            const SizedBox(height: 12),
-            _buildChipSection(
-              items: conditions,
-              chipColor: const Color(0xFFE3F2FD),
-              textColor: Colors.blue,
-              borderColor: Colors.blue.shade200,
-              onRemove: isEditing
-                  ? (item) => setState(() => conditions.remove(item))
-                  : null,
-            ),
-            if (isEditing) ...[
-              const SizedBox(height: 8),
-              _buildAddItemRow(
-                controller: _newConditionController,
-                hint: 'Add condition...',
-                onAdd: () {
-                  if (_newConditionController.text.trim().isNotEmpty) {
-                    setState(() {
-                      conditions
-                          .add(_newConditionController.text.trim());
-                      _newConditionController.clear();
-                    });
-                  }
-                },
-              ),
-            ],
-
-            const SizedBox(height: 24),
-
-            // Health Events
-            _buildSectionTitle(
-              'Significant Health Events',
-              Icons.event_note_outlined,
-              Colors.purple,
-            ),
-            const SizedBox(height: 12),
-            ...healthEvents.asMap().entries.map((entry) {
-              return _buildEventCard(entry.value, entry.key);
-            }),
-            if (isEditing) ...[
-              const SizedBox(height: 8),
-              _buildAddItemRow(
-                controller: _newEventController,
-                hint: 'Add health event...',
-                onAdd: () {
-                  if (_newEventController.text.trim().isNotEmpty) {
-                    setState(() {
-                      healthEvents
-                          .add(_newEventController.text.trim());
-                      _newEventController.clear();
-                    });
-                  }
-                },
-              ),
-            ],
-
-            const SizedBox(height: 32),
-          ],
-        ),
-      ),
     );
   }
 
@@ -488,10 +475,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
             child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(height: 12),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
+          Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
           const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -551,10 +535,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'BMI',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
+          const Text('BMI', style: TextStyle(fontSize: 12, color: Colors.grey)),
           const SizedBox(height: 4),
           Text(
             bmi.toStringAsFixed(1),
@@ -566,8 +547,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
           ),
           const SizedBox(height: 4),
           Container(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
               color: bmiColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
@@ -601,15 +581,11 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(
-          color: bmiColor.withValues(alpha: 0.3),
-          width: 1.5,
-        ),
+        border: Border.all(color: bmiColor.withValues(alpha: 0.3), width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           // Header
           Row(
             children: [
@@ -650,9 +626,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
             decoration: BoxDecoration(
               color: Colors.green.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: Colors.green.withValues(alpha: 0.3),
-              ),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -667,10 +641,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
                   children: [
                     const Text(
                       'Ideal BMI Range',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                     Text(
                       idealBmiRange,
@@ -688,10 +659,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
                   children: [
                     const Text(
                       'Healthy Weight Range',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                     Text(
                       '${minNormalWeight.toStringAsFixed(1)} - ${maxNormalWeight.toStringAsFixed(1)} kg',
@@ -715,9 +683,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
             decoration: BoxDecoration(
               color: bmiColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: bmiColor.withValues(alpha: 0.3),
-              ),
+              border: Border.all(color: bmiColor.withValues(alpha: 0.3)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -814,12 +780,11 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
     );
   }
 
-// BMI Scale Bar
+  // BMI Scale Bar
   Widget _buildBMIScaleBar() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
         // Scale bar
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
@@ -855,26 +820,11 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
         const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              '<18.5',
-              style: TextStyle(fontSize: 10, color: Colors.blue),
-            ),
-            Text(
-              '18.5',
-              style: TextStyle(fontSize: 10, color: Colors.green),
-            ),
-            Text(
-              '25',
-              style: TextStyle(fontSize: 10, color: Colors.orange),
-            ),
-            Text(
-              '30',
-              style: TextStyle(fontSize: 10, color: Colors.red),
-            ),
-            Text(
-              '30+',
-              style: TextStyle(fontSize: 10, color: Colors.red),
-            ),
+            Text('<18.5', style: TextStyle(fontSize: 10, color: Colors.blue)),
+            Text('18.5', style: TextStyle(fontSize: 10, color: Colors.green)),
+            Text('25', style: TextStyle(fontSize: 10, color: Colors.orange)),
+            Text('30', style: TextStyle(fontSize: 10, color: Colors.red)),
+            Text('30+', style: TextStyle(fontSize: 10, color: Colors.red)),
           ],
         ),
 
@@ -924,14 +874,10 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
         // Current BMI indicator
         Row(
           children: [
-            Icon(
-              Icons.arrow_upward,
-              color: bmiColor,
-              size: 14,
-            ),
+            Icon(Icons.arrow_upward, color: bmiColor, size: 14),
             const SizedBox(width: 4),
             Text(
-              'Your BMI: ${bmi.toStringAsFixed(1)} (${bmiCategory})',
+              'Your BMI: ${bmi.toStringAsFixed(1)} ($bmiCategory)',
               style: TextStyle(
                 fontSize: 12,
                 color: bmiColor,
@@ -979,56 +925,50 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
             child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(height: 12),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
+          Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
           const SizedBox(height: 4),
           isEditing
               ? TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-            decoration: InputDecoration(
-              suffix: Text(
-                unit,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-              ),
-              isDense: true,
-              contentPadding: EdgeInsets.zero,
-              border: InputBorder.none,
-            ),
-          )
-              : Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                controller.text,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 3),
-                child: Text(
-                  unit,
+                  controller: controller,
+                  keyboardType: TextInputType.number,
                   style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
+                  decoration: InputDecoration(
+                    suffix: Text(
+                      unit,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    border: InputBorder.none,
+                  ),
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      controller.text,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 3),
+                      child: Text(
+                        unit,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -1079,8 +1019,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
       runSpacing: 8,
       children: items.map((item) {
         return Container(
-          padding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: chipColor,
             borderRadius: BorderRadius.circular(20),
@@ -1129,11 +1068,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
                 ),
               ),
               if (index < healthEvents.length - 1)
-                Container(
-                  width: 2,
-                  height: 40,
-                  color: Colors.grey.shade300,
-                ),
+                Container(width: 2, height: 40, color: Colors.grey.shade300),
             ],
           ),
           const SizedBox(width: 12),
@@ -1262,9 +1197,7 @@ class _MedicalDetailsScreenState extends State<MedicalDetailsScreen> {
                     color: isSelected ? buttonStart : Colors.white,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: isSelected
-                          ? buttonStart
-                          : Colors.grey.shade300,
+                      color: isSelected ? buttonStart : Colors.grey.shade300,
                     ),
                   ),
                   child: Text(

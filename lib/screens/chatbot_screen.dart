@@ -53,6 +53,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     String reply;
 
     final msg = userMessage.toLowerCase();
+    const disclaimer = '\n\nNote: Please consult a medical professional for accurate medical advice.';
 
     if (msg.contains('hello') || msg.contains('hi')) {
       reply = 'Hello! 👋 How can I help you today?';
@@ -69,9 +70,25 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       reply = 'You can set medication reminders in the Reminders section!';
     } else if (msg.contains('thank')) {
       reply = 'You are welcome! 😊 Is there anything else I can help you with?';
+    } else if (msg.contains('fever') || msg.contains('temperature')) {
+      reply = 'For a fever, it is important to stay hydrated, rest, and keep cool. You may use over-the-counter fever reducers if appropriate.$disclaimer';
+    } else if (msg.contains('headache') || msg.contains('migraine') || msg.contains('head')) {
+      reply = 'For a headache, rest in a quiet, dark room, stay hydrated, and apply a cool compress to your forehead.$disclaimer';
+    } else if (msg.contains('cough') || msg.contains('cold') || msg.contains('flu')) {
+      reply = 'For a cough or cold, drink warm fluids, use a humidifier, and get plenty of rest.$disclaimer';
+    } else if (msg.contains('stomach') || msg.contains('pain') || msg.contains('nausea')) {
+      reply = 'For stomach pain, try sipping clear liquids, eating bland foods (like crackers or toast), and resting.$disclaimer';
+    } else if (msg.contains('diet') || msg.contains('nutrition') || msg.contains('food')) {
+      reply = 'For a healthy diet, focus on eating fruits, vegetables, lean proteins, and whole grains while reducing processed foods and sugars.$disclaimer';
+    } else if (msg.contains('sleep') || msg.contains('insomnia')) {
+      reply = 'To improve sleep, establish a regular schedule, limit screen time before bed, and ensure a comfortable, dark environment.$disclaimer';
+    } else if (msg.contains('exercise') || msg.contains('fitness')) {
+      reply = 'Aim for at least 150 minutes of moderate aerobic activity per week, along with strength training exercises twice a week.$disclaimer';
+    } else if (msg.contains('tip') || msg.contains('health') || msg.contains('advice')) {
+      reply = 'Here are some general wellness tips:\n1. Drink 8-10 glasses of water daily.\n2. Maintain a balanced diet.\n3. Aim for 7-8 hours of quality sleep.\n4. Exercise regularly.\n5. Practice mindfulness or meditation to reduce stress.$disclaimer';
     } else {
       reply =
-          'I understand you are asking about "$userMessage". Please consult a medical professional for accurate advice.';
+          'I understand you are asking about "$userMessage". Here are some general suggestions: get plenty of rest, stay hydrated, and monitor your symptoms.$disclaimer';
     }
 
     // Add the bot reply to the message list
