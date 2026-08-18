@@ -405,15 +405,18 @@ class _ReminderScreenState extends State<ReminderScreen> {
                   const SizedBox(width: 10),
                   CircleAvatar(
                     radius: 30,
-                    backgroundColor: Colors.white,
+                    backgroundColor: const Color.fromARGB(255, 123, 195, 237),
                     backgroundImage: (user?.profileImageUrl.isNotEmpty ?? false)
                         ? NetworkImage(user!.profileImageUrl)
                         : null,
                     child: (user?.profileImageUrl.isEmpty ?? true)
-                        ? const Icon(
-                            Icons.person,
-                            size: 30,
-                            color: Color(0xFF2D9CDB),
+                        ? Text(
+                            user?.initials ?? '?',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
                           )
                         : null,
                   ),

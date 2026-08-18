@@ -1,7 +1,9 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/chat_message_model.dart';
 import '../constant/app_colors.dart';
+import 'package:auracare_app/services/gemini_service.dart';
 
 class ChatbotScreen extends StatefulWidget {
   const ChatbotScreen({super.key});
@@ -12,22 +14,16 @@ class ChatbotScreen extends StatefulWidget {
 
 class _ChatbotScreenState extends State<ChatbotScreen> {
   final List<ChatMessage> _messages = [];
-
   final TextEditingController _controller = TextEditingController();
-
   final ScrollController _scrollController = ScrollController();
+  final GeminiService _geminiService = GeminiService();
 
   bool _chatStarted = false;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
+  bool _isBotTyping = false;
 
   // This runs when user presses the send button
-  void _sendMessage() {
+  // NOTE: marked `async` because it uses `await` inside for the Gemini call
+  void _sendMessage() async {
     final text = _controller.text.trim();
 
     // Don't send if message is empty
@@ -37,6 +33,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     setState(() {
       _messages.add(ChatMessage(text: text, isUser: true));
       _controller.clear(); // clear the text field
+      _isBotTyping = true;
     });
 
     // Scroll down to show the new message
@@ -94,9 +91,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     // Add the bot reply to the message list
     setState(() {
       _messages.add(ChatMessage(text: reply, isUser: false));
+      _isBotTyping = false;
     });
-
-    // Scroll down to show the bot reply
     _scrollToBottom();
   }
 
@@ -210,7 +206,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   // Welcome screen
-
   Widget _buildWelcomeView() {
     return Center(
       child: Padding(
@@ -271,9 +266,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     );
   }
 
-  // Chat screen
   // Chat screen (after user starts chatting)
   Widget _buildChatView() {
+    // include 1 extra slot for the typing bubble when the bot is "typing"
+    final itemCount = _messages.length + (_isBotTyping ? 1 : 0);
+
     return Column(
       children: [
         // Message bubbles list (takes up all available space)
@@ -281,8 +278,12 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           child: ListView.builder(
             controller: _scrollController,
             padding: const EdgeInsets.all(16),
-            itemCount: _messages.length,
+            itemCount: itemCount,
             itemBuilder: (context, index) {
+              // last item = typing indicator, shown only while _isBotTyping
+              if (_isBotTyping && index == _messages.length) {
+                return _buildTypingBubble();
+              }
               final message = _messages[index];
               return _buildMessageBubble(message);
             },
@@ -327,9 +328,63 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             ),
           ],
         ),
-        child: Text(
+        child: isUser
+            ? Text(
           message.text,
-          style: TextStyle(color: isUser ? buttonText : textDark, fontSize: 15),
+          style: const TextStyle(color: Colors.white, fontSize: 15),
+        )
+            : MarkdownBody(
+          data: message.text,
+          selectable: true,
+          styleSheet: MarkdownStyleSheet(
+            p: const TextStyle(color: textDark, fontSize: 15, height: 1.4),
+            strong: const TextStyle(
+              color: textDark,
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+            ),
+            listBullet: const TextStyle(color: textDark, fontSize: 15),
+            h1: const TextStyle(
+              color: textDark,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+            h2: const TextStyle(
+              color: textDark,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Simple typing indicator bubble shown while waiting for Gemini's reply
+  Widget _buildTypingBubble() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+            bottomRight: Radius.circular(20),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: const Text(
+          '...',
+          style: TextStyle(color: textDark, fontSize: 18),
         ),
       ),
     );
@@ -355,6 +410,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           Expanded(
             child: TextField(
               controller: _controller,
+              onSubmitted: (_) => _sendMessage(),
               decoration: InputDecoration(
                 hintText: 'Type a message...',
                 hintStyle: const TextStyle(color: textGrey),
@@ -374,13 +430,13 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
           const SizedBox(width: 10),
 
-          // Send button
+          // Send button — disabled while waiting for a reply
           CircleAvatar(
             backgroundColor: buttonColor,
             radius: 24,
             child: IconButton(
               icon: const Icon(Icons.send, color: Colors.white),
-              onPressed: _sendMessage,
+              onPressed: _isBotTyping ? null : _sendMessage,
             ),
           ),
         ],

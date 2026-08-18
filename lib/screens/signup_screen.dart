@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:auracare_app/constant/app_colors.dart';
 import 'package:auracare_app/services/firebase_service.dart';
 import 'package:auracare_app/services/pin_service.dart';
+import 'package:auracare_app/utils/validators.dart';
+import 'package:auracare_app/screens/email_verification_wait_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -31,9 +33,12 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  // Validate and go to PIN step
-  void _goToSetPin() {
-    if (_nameController.text.trim().isEmpty) {
+  // Validate then create account + send verification
+  Future<void> _goToSetPin() async {
+    final email = _emailController.text.trim();
+    final name = _nameController.text.trim();
+
+    if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter your full name'),
@@ -43,18 +48,62 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
 
-    if (_emailController.text.trim().isEmpty ||
-        !_emailController.text.contains('@')) {
+    if (email.isEmpty || !Validators.isValidEmailFormat(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please enter a valid email'),
-          backgroundColor: Colors.orange,
+          content: Text('Please enter a valid email address'),
+          backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
-    setState(() => _currentStep = 2);
+    if (Validators.isSuspiciousDomain(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please use a real email address'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
+    // Temp password (user never sees this)
+    final tempPassword = 'AuraCare_Temp_${email.hashCode}';
+
+    // Create account + send Firebase verification email
+    final error = await _firebaseService.createAccountAndSendVerification(
+      email: email,
+      password: tempPassword,
+      fullName: name,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (error == null) {
+      // Go to verification waiting screen
+      navigator.push(
+        MaterialPageRoute(
+          builder: (context) => EmailVerificationWaitScreen(
+            email: email,
+            name: name,
+            tempPassword: tempPassword,
+          ),
+        ),
+      );
+    } else if (error == 'already-verified') {
+      // Already verified  go to set PIN
+      setState(() => _currentStep = 2);
+    } else {
+      messenger.showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: Colors.red),
+      );
+    }
   }
 
   // Handle PIN number press
@@ -94,7 +143,8 @@ class _SignupScreenState extends State<SignupScreen> {
     });
   }
 
-  // Complete signup with Firebase ,save PIN
+  //Final signup: set PIN and go home
+  // Called AFTER email is verified
   Future<void> _completeSignup() async {
     if (_pin != _confirmPin) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -114,49 +164,12 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _isLoading = true);
 
     final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
 
-    final autoPassword =
-        'AuraCare_${_pin}_${_emailController.text.trim()}';
+    await _pinService.savePin(_pin);
 
-    String? error = await _firebaseService.signUp(
-      email: _emailController.text.trim(),
-      password: autoPassword,
-      fullName: _nameController.text.trim(),
-    );
+    setState(() => _isLoading = false);
 
-    if (error != null &&
-        (error.contains('already') || error.contains('in-use'))) {
-      error = await _firebaseService.login(
-        email: _emailController.text.trim(),
-        password: autoPassword,
-      );
-
-      if (error == null) {
-        await _firebaseService.updateUserName(
-          _nameController.text.trim(),
-        );
-      }
-    }
-
-    if (error == null) {
-      // Save PIN to device
-      await _pinService.savePin(_pin);
-
-      setState(() => _isLoading = false);
-
-      navigator.pushReplacementNamed('/home');
-    } else {
-      setState(() {
-        _isLoading = false;
-        _pin = '';
-        _confirmPin = '';
-        _isConfirming = false;
-      });
-      messenger.showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: Colors.red),
-      );
-    }
+    navigator.pushReplacementNamed('/home');
   }
 
   // Google Signup
@@ -183,11 +196,7 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: background,
-      body: SafeArea(
-        child: _currentStep == 1
-            ? _buildStep1()
-            : _buildStep2(),
-      ),
+      body: SafeArea(child: _currentStep == 1 ? _buildStep1() : _buildStep2()),
     );
   }
 
@@ -200,10 +209,7 @@ class _SignupScreenState extends State<SignupScreen> {
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 28,
-                vertical: 36,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(28),
@@ -217,7 +223,6 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               child: Column(
                 children: [
-
                   // Logo
                   Image.asset(
                     'assets/images/auracare_logo.png',
@@ -262,9 +267,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                   ),
 
@@ -286,9 +289,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                   ),
 
@@ -323,9 +324,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   //Divider
                   Row(
                     children: [
-                      Expanded(
-                        child: Divider(color: Colors.grey.shade300),
-                      ),
+                      Expanded(child: Divider(color: Colors.grey.shade300)),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text(
@@ -336,9 +335,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                         ),
                       ),
-                      Expanded(
-                        child: Divider(color: Colors.grey.shade300),
-                      ),
+                      Expanded(child: Divider(color: Colors.grey.shade300)),
                     ],
                   ),
 
@@ -349,22 +346,21 @@ class _SignupScreenState extends State<SignupScreen> {
                     width: double.infinity,
                     height: 52,
                     child: OutlinedButton.icon(
-                      onPressed:
-                      _isGoogleLoading ? null : _signUpWithGoogle,
+                      onPressed: _isGoogleLoading ? null : _signUpWithGoogle,
                       icon: _isGoogleLoading
                           ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: buttonStart,
-                        ),
-                      )
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: buttonStart,
+                              ),
+                            )
                           : Image.asset(
-                        'assets/images/google_icon.png',
-                        width: 22,
-                        height: 22,
-                      ),
+                              'assets/images/google_icon.png',
+                              width: 22,
+                              height: 22,
+                            ),
                       label: const Text(
                         'Continue with Google',
                         style: TextStyle(
@@ -397,7 +393,6 @@ class _SignupScreenState extends State<SignupScreen> {
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-
           const SizedBox(height: 40),
 
           //Lock icon
@@ -453,8 +448,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   shape: BoxShape.circle,
                   color: isFilled ? buttonStart : Colors.grey.shade300,
                   border: Border.all(
-                    color:
-                    isFilled ? buttonStart : Colors.grey.shade400,
+                    color: isFilled ? buttonStart : Colors.grey.shade400,
                     width: 2,
                   ),
                 ),

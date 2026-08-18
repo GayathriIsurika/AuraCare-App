@@ -8,6 +8,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class EmergencySosScreen extends StatefulWidget {
   const EmergencySosScreen({super.key});
@@ -17,6 +19,8 @@ class EmergencySosScreen extends StatefulWidget {
 }
 
 class _EmergencySosScreenState extends State<EmergencySosScreen> {
+  bool _showTip = false;
+
   // ── Firestore collection ref ──
   CollectionReference get _contactsRef {
     final user = FirebaseAuth.instance.currentUser;
@@ -35,6 +39,29 @@ class _EmergencySosScreenState extends State<EmergencySosScreen> {
   void initState() {
     super.initState();
     _seedEmergencyContact();
+    _checkTipStatus();
+  }
+
+  // ── Check if user has already seen or dismissed the tip ──
+  Future<void> _checkTipStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenTip = prefs.getBool('has_seen_sos_tip') ?? false;
+    if (!hasSeenTip && mounted) {
+      setState(() {
+        _showTip = true;
+      });
+    }
+  }
+
+  // ── Save tip preference on dismiss ──
+  Future<void> _dismissTip() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_sos_tip', true);
+    if (mounted) {
+      setState(() {
+        _showTip = false;
+      });
+    }
   }
 
   // ── Create fixed contact if it doesn't exist yet ──
@@ -44,7 +71,7 @@ class _EmergencySosScreenState extends State<EmergencySosScreen> {
       await _emergencyDocRef.set({
         'name': 'Emergency',
         'phoneNumber': '1990',
-        'iconCodePoint': FontAwesomeIcons.ambulance.codePoint,
+        'iconCodePoint': FontAwesomeIcons.truckMedical.codePoint,
         'isFixed': true,
       });
     }
@@ -78,6 +105,60 @@ class _EmergencySosScreenState extends State<EmergencySosScreen> {
     await _contactsRef.doc(id).delete();
   }
 
+  // ── Make phone call / open dialer ──
+  Future<void> _makeCall(String phoneNumber) async {
+    final trimmed = phoneNumber.trim();
+    if (trimmed.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No phone number provided.')),
+        );
+      }
+      return;
+    }
+
+    final cleaned = trimmed.replaceAll(RegExp(r'[^\d+]'), '');
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: cleaned.isNotEmpty ? cleaned : trimmed,
+    );
+
+    try {
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri);
+      } else {
+        await launchUrl(launchUri);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open phone dialer for $phoneNumber'),
+          ),
+        );
+      }
+    }
+  }
+
+  // ── Handle SOS button press ──
+  Future<void> _handleSosPressed() async {
+    try {
+      final doc = await _emergencyDocRef.get();
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data() as Map<String, dynamic>;
+        final phone = data['phoneNumber'] as String?;
+        if (phone != null && phone.trim().isNotEmpty) {
+          await _makeCall(phone);
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting emergency doc: $e');
+    }
+    // Fallback to 1990
+    await _makeCall('1990');
+  }
+
   // ── Open add/edit sheet ──
   void _openContactSheet({ContactModel? existing}) {
     final isFixed = existing?.id == 'emergency_fixed';
@@ -88,6 +169,74 @@ class _EmergencySosScreenState extends State<EmergencySosScreen> {
       lockName: isFixed,
       onSave: (name, phone, icon) =>
           _saveContact(name, phone, icon, existing: existing),
+    );
+  }
+
+  // ── First-Time Tip Card Widget ──
+  Widget _buildTipCard() {
+    if (!_showTip) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(top: 12, bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEBF5FB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFAED6F1)),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.lightbulb_outline_rounded,
+            color: Color(0xFF2980B9),
+            size: 22,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  '💡 Quick Tip & Instructions',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: Color(0xFF1B4F72),
+                  ),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  'Swipe right on any contact to edit details, or swipe left to delete.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF2874A6),
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: _dismissTip,
+            child: const Padding(
+              padding: EdgeInsets.all(4.0),
+              child: Icon(
+                Icons.close,
+                size: 18,
+                color: Color(0xFF5D6D7E),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -144,7 +293,7 @@ class _EmergencySosScreenState extends State<EmergencySosScreen> {
                       children: [
                         const SizedBox(height: 60),
 
-                        SosButton(onPressed: () {}),
+                        SosButton(onPressed: _handleSosPressed),
                         const SizedBox(height: 40),
 
                         // ── Header row ──
@@ -192,21 +341,8 @@ class _EmergencySosScreenState extends State<EmergencySosScreen> {
                           ],
                         ),
 
-                        // ── Swipe hint ──
-                        const SizedBox(height: 10),
-                        const Row(
-                          children: [
-                            Icon(Icons.swipe, size: 13, color: Colors.grey),
-                            SizedBox(width: 4),
-                            Text(
-                              'Swipe right to edit  ·  Swipe left to delete',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
+                        // ── First-Time Tip / Instructions Card ──
+                        _buildTipCard(),
                         const SizedBox(height: 5),
 
                         // ── Firestore real-time list ──
@@ -264,7 +400,7 @@ class _EmergencySosScreenState extends State<EmergencySosScreen> {
                                 return ContactCard(
                                   contact: c,
                                   isFixed: c.id == 'emergency_fixed',
-                                  onCall: () {},
+                                  onCall: () => _makeCall(c.phoneNumber),
                                   onEdit: () => _openContactSheet(existing: c),
                                   onDelete: () => _deleteContact(c.id),
                                 );
