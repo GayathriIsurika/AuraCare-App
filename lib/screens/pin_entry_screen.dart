@@ -49,22 +49,19 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
 
     final isCorrect = await _pinService.verifyPin(_enteredPin);
 
-    setState(() => _isLoading = false);
-
     if (isCorrect) {
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/home');
       }
     } else {
-
-      _attemptCount++;
-      setState(() {
-        _hasError = true;
-        _enteredPin = '';
-      });
-
-      // Show error message
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _attemptCount++;
+          _hasError = true;
+          _enteredPin = '';
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(

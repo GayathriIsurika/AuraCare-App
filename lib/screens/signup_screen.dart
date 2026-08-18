@@ -143,8 +143,6 @@ class _SignupScreenState extends State<SignupScreen> {
       // Save PIN to device
       await _pinService.savePin(_pin);
 
-      setState(() => _isLoading = false);
-
       navigator.pushReplacementNamed('/home');
     } else {
       setState(() {
