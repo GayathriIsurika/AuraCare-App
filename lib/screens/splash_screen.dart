@@ -23,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 800),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -40,7 +40,7 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // ← Start animation then navigate
+    // Start animation then navigate
     _controller.forward().then((_) {
       _navigateToNextScreen();
     });
