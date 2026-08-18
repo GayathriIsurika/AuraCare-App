@@ -182,7 +182,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
   Future<void> generateReportSummary(String ocrText) async {
     // 1. Put your actual Gemini API key inside these quotes
-    const apiKey = AQ.Ab8RN6Ky86YOt3H7mLk - BjUZjg0gS9Sm5VqbmTLbmmJC7oE4EQ;
+    const apiKey = 'AQ.Ab8RN6Ky86YOt3H7mLk - BjUZjg0gS9Sm5VqbmTLbmmJC7oE4EQ';
 
     if (apiKey.isEmpty) {
       print('API Key is missing.');
