@@ -164,10 +164,34 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _isLoading = true);
 
     final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
 
-    await _pinService.savePin(_pin);
+    final autoPassword =
+        'AuraCare_${_pin}_${_emailController.text.trim()}';
 
-    setState(() => _isLoading = false);
+    String? error = await _firebaseService.signUp(
+      email: _emailController.text.trim(),
+      password: autoPassword,
+      fullName: _nameController.text.trim(),
+    );
+
+    if (error != null &&
+        (error.contains('already') || error.contains('in-use'))) {
+      error = await _firebaseService.login(
+        email: _emailController.text.trim(),
+        password: autoPassword,
+      );
+
+      if (error == null) {
+        await _firebaseService.updateUserName(
+          _nameController.text.trim(),
+        );
+      }
+    }
+
+    if (error == null) {
+      // Save PIN to device
+      await _pinService.savePin(_pin);
 
     navigator.pushReplacementNamed('/home');
   }

@@ -1,3 +1,4 @@
+import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/chat_message_model.dart';
@@ -38,10 +39,56 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     // Scroll down to show the new message
     _scrollToBottom();
 
-    // Call Gemini and wait for the reply
-    final reply = await _geminiService.sendMessage(text);
+    // Wait a moment then show bot reply
+    Future.delayed(const Duration(milliseconds: 800), () {
+      _getBotReply(text);
+    });
+  }
 
-    if (!mounted) return; // widget could be disposed while awaiting
+  // This generates a simple bot reply
+  void _getBotReply(String userMessage) {
+    String reply;
+
+    final msg = userMessage.toLowerCase();
+    const disclaimer = '\n\nNote: Please consult a medical professional for accurate medical advice.';
+
+    if (msg.contains('hello') || msg.contains('hi')) {
+      reply = 'Hello! 👋 How can I help you today?';
+    } else if (msg.contains('appointment')) {
+      reply =
+          'I can help you book an appointment! Please go to the appointments section.';
+    } else if (msg.contains('doctor')) {
+      reply =
+          'You can find doctors in the Health Directory section of the app!';
+    } else if (msg.contains('emergency')) {
+      reply =
+          '🚨 If this is an emergency please use the SOS button immediately!';
+    } else if (msg.contains('reminder')) {
+      reply = 'You can set medication reminders in the Reminders section!';
+    } else if (msg.contains('thank')) {
+      reply = 'You are welcome! 😊 Is there anything else I can help you with?';
+    } else if (msg.contains('fever') || msg.contains('temperature')) {
+      reply = 'For a fever, it is important to stay hydrated, rest, and keep cool. You may use over-the-counter fever reducers if appropriate.$disclaimer';
+    } else if (msg.contains('headache') || msg.contains('migraine') || msg.contains('head')) {
+      reply = 'For a headache, rest in a quiet, dark room, stay hydrated, and apply a cool compress to your forehead.$disclaimer';
+    } else if (msg.contains('cough') || msg.contains('cold') || msg.contains('flu')) {
+      reply = 'For a cough or cold, drink warm fluids, use a humidifier, and get plenty of rest.$disclaimer';
+    } else if (msg.contains('stomach') || msg.contains('pain') || msg.contains('nausea')) {
+      reply = 'For stomach pain, try sipping clear liquids, eating bland foods (like crackers or toast), and resting.$disclaimer';
+    } else if (msg.contains('diet') || msg.contains('nutrition') || msg.contains('food')) {
+      reply = 'For a healthy diet, focus on eating fruits, vegetables, lean proteins, and whole grains while reducing processed foods and sugars.$disclaimer';
+    } else if (msg.contains('sleep') || msg.contains('insomnia')) {
+      reply = 'To improve sleep, establish a regular schedule, limit screen time before bed, and ensure a comfortable, dark environment.$disclaimer';
+    } else if (msg.contains('exercise') || msg.contains('fitness')) {
+      reply = 'Aim for at least 150 minutes of moderate aerobic activity per week, along with strength training exercises twice a week.$disclaimer';
+    } else if (msg.contains('tip') || msg.contains('health') || msg.contains('advice')) {
+      reply = 'Here are some general wellness tips:\n1. Drink 8-10 glasses of water daily.\n2. Maintain a balanced diet.\n3. Aim for 7-8 hours of quality sleep.\n4. Exercise regularly.\n5. Practice mindfulness or meditation to reduce stress.$disclaimer';
+    } else {
+      reply =
+          'I understand you are asking about "$userMessage". Here are some general suggestions: get plenty of rest, stay hydrated, and monitor your symptoms.$disclaimer';
+    }
+
+    // Add the bot reply to the message list
     setState(() {
       _messages.add(ChatMessage(text: reply, isUser: false));
       _isBotTyping = false;
@@ -127,6 +174,35 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       body: _chatStarted ? _buildChatView() : _buildWelcomeView(),
       bottomNavigationBar: _buildBottomBar(),
     );
+  }
+
+  Future<void> generateReportSummary(String ocrText) async {
+    // 1. Put your actual Gemini API key inside these quotes
+    const apiKey = 'AQ.Ab8RN6Ky86YOt3H7mLk - BjUZjg0gS9Sm5VqbmTLbmmJC7oE4EQ';
+
+    if (apiKey.isEmpty) {
+      print('API Key is missing.');
+      return;
+    }
+
+    // 2. Set up the Gemini model
+    final model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: apiKey);
+
+    try {
+      // 3. Give Gemini its instructions and the medical text
+      final prompt =
+          'You are a medical assistant. Summarize the following medical report in simple, easy-to-understand language for a patient:\n\n$ocrText';
+      final content = [Content.text(prompt)];
+
+      // 4. Wait for Gemini to reply
+      final response = await model.generateContent(content);
+
+      // 5. Print the result
+      final summaryText = response.text;
+      print("AI Summary: $summaryText");
+    } catch (e) {
+      print("AI API Error: $e");
+    }
   }
 
   // Welcome screen

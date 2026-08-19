@@ -77,10 +77,9 @@ class _SetPinScreenState extends State<SetPinScreen> {
 
     await _pinService.savePin(_pin);
 
-    setState(() => _isLoading = false);
-
     if (mounted) {
       if (widget.isChangingPin) {
+        setState(() => _isLoading = false);
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -101,21 +100,21 @@ class _SetPinScreenState extends State<SetPinScreen> {
       // Add appBar when changing PIN so user can go back
       appBar: widget.isChangingPin
           ? AppBar(
-        backgroundColor: background,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Change PIN',
-          style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.bold,
-              fontSize: 18
-          ),
-        ),
-      )
+              backgroundColor: background,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text(
+                'Change PIN',
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            )
           : null,
 
       body: SafeArea(
@@ -124,7 +123,6 @@ class _SetPinScreenState extends State<SetPinScreen> {
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-
                 const SizedBox(height: 40),
 
                 // Lock icon

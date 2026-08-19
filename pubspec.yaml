@@ -58,6 +58,7 @@ dependencies:
   geolocator: ^14.0.2
   flutter_map: ^7.0.1
   latlong2: ^0.9.1
+  google_generative_ai: ^0.4.7
 dev_dependencies:
   flutter_test:
     sdk: flutter

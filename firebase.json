@@ -1,1 +1,39 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"auracare-app","appId":"1:640878965353:android:bfbe1a8deb514caa4f68f8","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"auracare-app","configurations":{"android":"1:640878965353:android:bfbe1a8deb514caa4f68f8","ios":"1:640878965353:ios:f8c3ad30108e680b4f68f8","macos":"1:640878965353:ios:f8c3ad30108e680b4f68f8","web":"1:640878965353:web:800fb53d8768b6db4f68f8","windows":"1:640878965353:web:146aaf660b17e7604f68f8"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "auracare-app",
+          "appId": "1:640878965353:android:bfbe1a8deb514caa4f68f8",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "auracare-app",
+          "configurations": {
+            "android": "1:640878965353:android:bfbe1a8deb514caa4f68f8",
+            "ios": "1:640878965353:ios:f8c3ad30108e680b4f68f8",
+            "macos": "1:640878965353:ios:f8c3ad30108e680b4f68f8",
+            "web": "1:640878965353:web:800fb53d8768b6db4f68f8",
+            "windows": "1:640878965353:web:146aaf660b17e7604f68f8"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}
