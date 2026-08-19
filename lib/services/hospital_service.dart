@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import '../models/hospital_model.dart';
@@ -38,7 +39,7 @@ out center;
 ''';
 
     try {
-      print('Calling Overpass API...');
+      debugPrint('Calling Overpass API...');
       final encodedQuery = Uri.encodeComponent(query);
       final response = await http
           .get(
@@ -49,7 +50,7 @@ out center;
           )
           .timeout(const Duration(seconds: 60));
 
-      print('Overpass status: ${response.statusCode}');
+      debugPrint('Overpass status: ${response.statusCode}');
 
       if (response.statusCode != 200) {
         throw Exception('Failed: ${response.statusCode}');
@@ -57,7 +58,7 @@ out center;
 
       final data = json.decode(response.body);
       final elements = data['elements'] as List;
-      print('Elements found: ${elements.length}');
+      debugPrint('Elements found: ${elements.length}');
 
       List<HospitalModel> hospitals = [];
 
@@ -92,7 +93,7 @@ out center;
       hospitals.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
       return hospitals;
     } catch (e) {
-      print('Overpass API error: $e');
+      debugPrint('Overpass API error: $e');
       rethrow;
     }
   }

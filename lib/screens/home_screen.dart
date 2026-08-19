@@ -262,7 +262,6 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.pushNamed(context, '/hospital');
         } else if (item.label == 'Ask Aura') {
           Navigator.pushNamed(context, '/chatbot');
-          // TODO: add AI chat screen
         }
       },
       child: Container(

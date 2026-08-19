@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/chat_message_model.dart';
 import '../constant/app_colors.dart';
-import 'package:auracare_app/services/gemini_service.dart';
 
 class ChatbotScreen extends StatefulWidget {
   const ChatbotScreen({super.key});
@@ -16,7 +15,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   final List<ChatMessage> _messages = [];
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final GeminiService _geminiService = GeminiService();
 
   bool _chatStarted = false;
   bool _isBotTyping = false;
@@ -200,7 +198,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     const apiKey = 'AQ.Ab8RN6Ky86YOt3H7mLk - BjUZjg0gS9Sm5VqbmTLbmmJC7oE4EQ';
 
     if (apiKey.isEmpty) {
-      print('API Key is missing.');
+      debugPrint('API Key is missing.');
       return;
     }
 
@@ -218,9 +216,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
       // 5. Print the result
       final summaryText = response.text;
-      print("AI Summary: $summaryText");
+      debugPrint("AI Summary: $summaryText");
     } catch (e) {
-      print("AI API Error: $e");
+      debugPrint("AI API Error: $e");
     }
   }
 

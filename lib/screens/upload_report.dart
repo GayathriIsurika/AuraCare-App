@@ -190,7 +190,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   }
 
   void _openRecord(MedicalRecord record) {
-    print('🔗 cloudinaryUrl: "${record.cloudinaryUrl}"');
+    debugPrint('🔗 cloudinaryUrl: "${record.cloudinaryUrl}"');
     if (record.cloudinaryUrl.isEmpty) {
       ScaffoldMessenger.of(
         context,

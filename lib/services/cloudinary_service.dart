@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cloudinary_public/cloudinary_public.dart';
+import 'package:flutter/foundation.dart';
 
 class CloudinaryService {
   static const String _cloudName = 'duwjixmck';
@@ -32,9 +33,9 @@ class CloudinaryService {
   //Upload Medical Record
   Future<Map<String, String>?> uploadMedicalRecord(File file) async {
     try {
-      print('☁️ Cloud: $_cloudName');
-      print('📋 Preset: $_uploadPreset');
-      print('📁 File: ${file.path}');
+      debugPrint('☁️ Cloud: $_cloudName');
+      debugPrint('📋 Preset: $_uploadPreset');
+      debugPrint('📁 File: ${file.path}');
 
       // Detect if file is PDF
       final isPdf = file.path.toLowerCase().endsWith('.pdf');
@@ -50,14 +51,14 @@ class CloudinaryService {
         ),
       );
 
-      print('✅ Upload success: ${response.secureUrl}');
+      debugPrint('✅ Upload success: ${response.secureUrl}');
 
       return {'url': response.secureUrl, 'publicId': response.publicId};
     } on CloudinaryException catch (e) {
-      print('❌ Cloudinary error: ${e.message}');
+      debugPrint('❌ Cloudinary error: ${e.message}');
       return null;
     } catch (e) {
-      print('❌ General error: $e');
+      debugPrint('❌ General error: $e');
       return null;
     }
   }

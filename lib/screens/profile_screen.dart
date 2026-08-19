@@ -385,7 +385,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   await _firebaseService.logout();
 
-                  if (mounted) {
+                  if (context.mounted) {
                     Navigator.pushNamedAndRemoveUntil(
                       context,
                       '/signup',

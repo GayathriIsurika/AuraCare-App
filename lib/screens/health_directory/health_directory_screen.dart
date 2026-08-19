@@ -123,7 +123,7 @@ class _HealthDirectoryScreenState extends State<HealthDirectoryScreen> {
         _isLoadingHospitals = false;
       });
     } catch (e) {
-      print('LOAD HOSPITALS ERROR: $e');
+      debugPrint('LOAD HOSPITALS ERROR: $e');
       setState(() {
         _locationError = e.toString();
         _isLoadingHospitals = false;

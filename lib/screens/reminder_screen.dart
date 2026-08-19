@@ -5,7 +5,7 @@ import 'package:auracare_app/services/firebase_service.dart';
 import 'package:auracare_app/widgets/add_reminder_sheet.dart';
 import 'package:auracare_app/widgets/appointment_card.dart';
 import 'package:auracare_app/widgets/bottom_nav_bar.dart';
-import 'package:auracare_app/widgets/dataPIckerWidget.dart';
+import 'package:auracare_app/widgets/data_picker_widget.dart';
 import 'package:auracare_app/widgets/hydration_card.dart';
 import 'package:auracare_app/widgets/medicine_card.dart';
 import 'package:flutter/material.dart';
