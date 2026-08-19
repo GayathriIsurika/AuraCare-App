@@ -95,7 +95,6 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-
               const SizedBox(height: 40),
 
               // App logo

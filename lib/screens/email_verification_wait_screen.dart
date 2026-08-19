@@ -186,10 +186,11 @@ class _EmailVerificationWaitScreenState
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
         await _goBack();
-        return false;
       },
       child: Scaffold(
         backgroundColor: background,

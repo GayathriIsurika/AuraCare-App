@@ -166,8 +166,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
-    final autoPassword =
-        'AuraCare_${_pin}_${_emailController.text.trim()}';
+    final autoPassword = 'AuraCare_${_pin}_${_emailController.text.trim()}';
 
     String? error = await _firebaseService.signUp(
       email: _emailController.text.trim(),
@@ -183,17 +182,25 @@ class _SignupScreenState extends State<SignupScreen> {
       );
 
       if (error == null) {
-        await _firebaseService.updateUserName(
-          _nameController.text.trim(),
-        );
+        await _firebaseService.updateUserName(_nameController.text.trim());
       }
     }
 
     if (error == null) {
       // Save PIN to device
       await _pinService.savePin(_pin);
-
-    navigator.pushReplacementNamed('/home');
+      navigator.pushReplacementNamed('/home');
+    } else {
+      setState(() {
+        _isLoading = false;
+        _pin = '';
+        _confirmPin = '';
+        _isConfirming = false;
+      });
+      messenger.showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: Colors.red),
+      );
+    }
   }
 
   // Google Signup

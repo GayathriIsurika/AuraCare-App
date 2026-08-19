@@ -24,7 +24,7 @@ class _EmergencySosScreenState extends State<EmergencySosScreen> {
   // ── Firestore collection ref ──
   CollectionReference get _contactsRef {
     final user = FirebaseAuth.instance.currentUser;
-    print('🔥 Current user: $user');
+    debugPrint('🔥 Current user: $user');
     final uid = user!.uid;
     return FirebaseFirestore.instance
         .collection('users')

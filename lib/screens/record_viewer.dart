@@ -49,17 +49,17 @@ class _RecordViewerScreenState extends State<RecordViewerScreen> {
   }
 
   Future<void> _downloadFile() async {
-    print('🔗 Loading URL: ${widget.url}');
+    debugPrint('🔗 Loading URL: ${widget.url}');
     try {
       final response = await http.get(Uri.parse(widget.url));
-      print('📡 Status code: ${response.statusCode}');
+      debugPrint('📡 Status code: ${response.statusCode}');
 
       setState(() {
         _imageBytes = response.bodyBytes; // ← store in memory, no disk needed
         _isLoading = false;
       });
     } catch (e) {
-      print('❌ Error: $e');
+      debugPrint('❌ Error: $e');
       setState(() {
         _error = 'Failed to load file: $e';
         _isLoading = false;

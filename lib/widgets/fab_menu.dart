@@ -226,9 +226,9 @@ class _UploadFabMenuState extends State<UploadFabMenu>
       if (result != null) {
         final file = result.files.single;
 
-        print('📄 File name: ${file.name}');
-        print('📄 File path: ${file.path}');
-        print('📄 File size: ${file.size}');
+        debugPrint('📄 File name: ${file.name}');
+        debugPrint('📄 File path: ${file.path}');
+        debugPrint('📄 File size: ${file.size}');
 
         // path can be null on some devices
         if (file.path == null) {
@@ -240,7 +240,7 @@ class _UploadFabMenuState extends State<UploadFabMenu>
         await _uploadAndSave(file.path!, defaultTitle: defaultTitle);
       }
     } catch (e) {
-      print('❌ File picker error: $e');
+      debugPrint('❌ File picker error: $e');
       _showSnack('❌ File picker error: $e');
     }
   }
