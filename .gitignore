@@ -35,3 +35,12 @@ doc/api/
 **/generated_plugins_cmake.txt
 **/GeneratedPluginRegistrant.swift
 **/GeneratedPluginRegistrant.m
+
+# Dependency directories
+node_modules/
+
+# Android/Kotlin build and cache files
+android/.kotlin/
+
+# Log files
+*.log
